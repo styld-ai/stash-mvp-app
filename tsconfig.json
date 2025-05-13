@@ -1,0 +1,36 @@
+{
+  "files": [],
+
+  "references": [
+    { "path": "./tsconfig.app.json" },
+    { "path": "./tsconfig.node.json" }
+  ],
+
+  "compilerOptions": {
+    /* ------------------------------------------------------------------ */
+    /* Alias keeps TypeScript in sync with Vite’s `@`                     */
+    /* ------------------------------------------------------------------ */
+    "baseUrl": ".",                       // project root
+    "paths": {
+      "@/*": ["src/*"]
+    },
+
+    /* ------------------------------------------------------------------ */
+    /* Typical React-Vite settings                                        */
+    /* ------------------------------------------------------------------ */
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "lib": ["DOM", "ESNext"],
+
+    /* ------------------------------------------------------------------ */
+    /* Relaxed flags (you can tighten later)                              */
+    /* ------------------------------------------------------------------ */
+    "skipLibCheck": true,
+    "allowJs": true,
+    "noImplicitAny": false,
+    "noUnusedParameters": false,
+    "noUnusedLocals": false,
+    "strictNullChecks": false
+  }
+}

@@ -1,0 +1,1748 @@
+This file is a merged representation of the entire codebase, combined into a single document by Repomix.
+
+<file_summary>
+This section contains a summary of this file.
+
+<purpose>
+This file contains a packed representation of the entire repository's contents.
+It is designed to be easily consumable by AI systems for analysis, code review,
+or other automated processes.
+</purpose>
+
+<file_format>
+The content is organized as follows:
+1. This summary section
+2. Repository information
+3. Directory structure
+4. Repository files (if enabled)
+4. Repository files, each consisting of:
+  - File path as an attribute
+  - Full contents of the file
+</file_format>
+
+<usage_guidelines>
+- This file should be treated as read-only. Any changes should be made to the
+  original repository files, not this packed version.
+- When processing this file, use the file path to distinguish
+  between different files in the repository.
+- Be aware that this file may contain sensitive information. Handle it with
+  the same level of security as you would the original repository.
+</usage_guidelines>
+
+<notes>
+- Some files may have been excluded based on .gitignore rules and Repomix's configuration
+- Binary files are not included in this packed representation. Please refer to the Repository Structure section for a complete list of file paths, including binary files
+- Files matching patterns in .gitignore are excluded
+- Files matching default ignore patterns are excluded
+- Files are sorted by Git change count (files with more changes are at the bottom)
+</notes>
+
+<additional_info>
+
+</additional_info>
+
+</file_summary>
+
+<directory_structure>
+public/
+  robots.txt
+src/
+  lib/
+    api.ts
+    locations.ts
+    openai.ts
+    utils.ts
+  pages/
+    DeployTest.tsx
+    Index.tsx
+    NotFound.tsx
+    Results.tsx
+  App.tsx
+  main.tsx
+  vite-env.d.ts
+.gitignore
+eslint.config.js
+index.html
+postcss.config.js
+README.md
+tailwind.config.ts
+vite.config.ts
+</directory_structure>
+
+<files>
+This section contains the contents of the repository's files.
+
+<file path="public/robots.txt">
+User-agent: Googlebot
+Allow: /
+
+User-agent: Bingbot
+Allow: /
+
+User-agent: Twitterbot
+Allow: /
+
+User-agent: facebookexternalhit
+Allow: /
+
+User-agent: *
+Allow: /
+</file>
+
+<file path="src/lib/api.ts">
+import { toast } from "@/hooks/use-toast";
+import {
+  PackagingAnalysis,
+  analyzePackageDesign,
+  fileToBase64
+} from "./openai";
+
+/* ---------- Local types ------------------------------------------ */
+
+interface UploadedImage {
+  id: string;
+  file: File;
+  preview: string;
+}
+
+interface AnalysisResult {
+  imageId: string;
+  originalSrc: string;
+  heatmapSrc: string;
+  attentionScore: number;
+  colorImpact: number;
+  readability: number;
+  brandVisibility: number;
+  overallScore: number;
+  suggestions: string[];
+  aiAnalysis?: string;
+}
+
+/* ---------- Public function -------------------------------------- */
+
+export const analyzeImages = async (
+  images: UploadedImage[]
+): Promise<AnalysisResult[]> => {
+  toast({
+    title: "Analyzing images",
+    description: "Running AI vision model…"
+  });
+
+  return Promise.all(
+    images.map(async (image) => {
+      try {
+        /* 1️⃣  generate fake heatmap locally */
+        const heatmapSrc = await generateSimulatedHeatmap(image.preview);
+
+        /* 2️⃣  real AI analysis */
+        const base64 = await fileToBase64(image.file);
+        let analysis: PackagingAnalysis;
+
+        try {
+          analysis = await analyzePackageDesign(base64);
+        } catch (err) {
+          console.error("AI analysis failed:", err);
+          toast({
+            title: "AI analysis failed",
+            description: "Showing simulated scores instead.",
+            variant: "destructive"
+          });
+          const fallbackScore =
+            Math.round((4 + Math.random() * 5.5) * 10) / 10;
+          analysis = {
+            attentionScore: fallbackScore,
+            colorImpact: fallbackScore,
+            readability: fallbackScore,
+            brandVisibility: fallbackScore,
+            overallScore: fallbackScore,
+            suggestions: generateSuggestions(fallbackScore),
+            analysis: "Simulated analysis due to API error."
+          };
+        }
+
+        /* 3️⃣  return combined result for UI */
+        return {
+          imageId: image.id,
+          originalSrc: image.preview,
+          heatmapSrc,
+          attentionScore: analysis.attentionScore,
+          colorImpact: analysis.colorImpact,
+          readability: analysis.readability,
+          brandVisibility: analysis.brandVisibility,
+          overallScore: analysis.overallScore,
+          suggestions: analysis.suggestions,
+          aiAnalysis: analysis.analysis
+        };
+      } catch (err) {
+        console.error("Unexpected analysis error:", err);
+        throw err;
+      }
+    })
+  );
+};
+
+/* ---------- Helpers ---------------------------------------------- */
+
+/* Canvas-based pseudo heatmap */
+const generateSimulatedHeatmap = (url: string): Promise<string> =>
+  new Promise((resolve, reject) => {
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+    const img = new Image();
+
+    img.onload = () => {
+      canvas.width = img.width;
+      canvas.height = img.height;
+      if (!ctx) return reject(new Error("No 2D context"));
+
+      /* draw image first */
+      ctx.drawImage(img, 0, 0);
+
+      const { data } = ctx.getImageData(0, 0, canvas.width, canvas.height);
+
+      const cx = canvas.width / 2;
+      const cy = canvas.height / 2;
+
+      for (let y = 0; y < canvas.height; y++) {
+        for (let x = 0; x < canvas.width; x++) {
+          const i = (y * canvas.width + x) * 4;
+
+          /* simple heuristic: center + top gets hotter */
+          const d =
+            Math.sqrt(
+              ((x - cx) / (canvas.width / 2)) ** 2 +
+                ((y - cy) / (canvas.height / 2)) ** 2
+            ) || 0;
+          const topBoost = 1 - Math.min(y / (canvas.height / 3), 1);
+          let heat = (1 - d) * 0.6 + topBoost * 0.3 + Math.random() * 0.2;
+          heat = Math.max(0, Math.min(1, heat));
+
+          if (heat > 0.6) {
+            /* red-yellow */
+            data[i] = 255;
+            data[i + 1] = ((heat - 0.6) * 255) / 0.4;
+            data[i + 2] = 0;
+          } else {
+            /* blue-cyan-green */
+            data[i] = 0;
+            data[i + 1] = (heat * 255) / 0.6;
+            data[i + 2] = ((0.6 - heat) * 255) / 0.6;
+          }
+          data[i + 3] = 128 * heat; // alpha
+        }
+      }
+
+      ctx.putImageData(new ImageData(data, canvas.width, canvas.height), 0, 0);
+
+      ctx.globalAlpha = 0.7;
+      ctx.drawImage(img, 0, 0);
+
+      resolve(canvas.toDataURL("image/jpeg"));
+    };
+
+    img.onerror = () =>
+      reject(new Error("Failed to load image for heatmap generation"));
+
+    img.src = url;
+  });
+
+/* Suggestion generator */
+const generateSuggestions = (score: number): string[] => {
+  const ideas = [
+    "Increase contrast between product name and background.",
+    "Use a larger font for key claims.",
+    "Position the logo in the top third for maximum noticeability.",
+    "Reduce visual clutter to focus attention on core message.",
+    "Consider higher-saturation colors for stronger shelf pop.",
+    "Add negative space around hero elements.",
+    "Try a distinctive die-cut or silhouette.",
+    "Apply the rule of thirds to layout.",
+    "Add texture contrast to make elements pop.",
+    "Re-evaluate hierarchy based on consumer priorities."
+  ];
+  const shuffled = ideas.sort(() => 0.5 - Math.random());
+  const n = Math.max(2, Math.min(5, Math.round(10 - score)));
+  return shuffled.slice(0, n);
+};
+</file>
+
+<file path="src/lib/locations.ts">
+// Icon imports would go here, assuming you're using Lucide icons
+import { Building, GraduationCap, Dumbbell, Hotel, Film, Hospital } from "lucide-react";
+
+export interface LocationType {
+  id: string;
+  type: string;
+  icon: any; // This would be the Lucide icon component
+  description: string;
+  available: {
+    refrigerated: number;
+    nonRefrigerated: number;
+  };
+}
+
+export const locationTypes: LocationType[] = [
+  {
+    id: "office",
+    type: "Office",
+    icon: Building,
+    description: "Corporate and business offices",
+    available: {
+      refrigerated: 120,
+      nonRefrigerated: 200
+    }
+  },
+  {
+    id: "school",
+    type: "School",
+    icon: GraduationCap,
+    description: "K-12 and higher education facilities",
+    available: {
+      refrigerated: 80,
+      nonRefrigerated: 150
+    }
+  },
+  {
+    id: "gym",
+    type: "Gym",
+    icon: Dumbbell,
+    description: "Fitness centers and sports facilities",
+    available: {
+      refrigerated: 60,
+      nonRefrigerated: 100
+    }
+  },
+  {
+    id: "hotel",
+    type: "Hotel",
+    icon: Hotel,
+    description: "Hotels and accommodations",
+    available: {
+      refrigerated: 90,
+      nonRefrigerated: 130
+    }
+  },
+  {
+    id: "movie_theater",
+    type: "Movie Theater",
+    icon: Film,
+    description: "Cinemas and entertainment venues",
+    available: {
+      refrigerated: 40,
+      nonRefrigerated: 70
+    }
+  },
+  {
+    id: "hospital",
+    type: "Hospital",
+    icon: Hospital,
+    description: "Healthcare facilities and medical centers",
+    available: {
+      refrigerated: 50,
+      nonRefrigerated: 85
+    }
+  }
+];
+</file>
+
+<file path="src/lib/openai.ts">
+import OpenAI from "openai";
+import { zodTextFormat } from "openai/helpers/zod";
+import { z } from "zod";
+
+/* ------------------------------------------------------------------ */
+/* 1.  OpenAI client                                                  */
+/* ------------------------------------------------------------------ */
+
+// Use environment variable instead of hardcoded API key
+const OPENAI_API_KEY = import.meta.env.VITE_OPENAI_API_KEY;
+
+const openai = new OpenAI({
+  apiKey: OPENAI_API_KEY,
+  dangerouslyAllowBrowser: true
+});
+
+/* ------------------------------------------------------------------ */
+/* 2.  Zod schema for structured output                               */
+/* ------------------------------------------------------------------ */
+
+export const PackagingAnalysisSchema = z.object({
+  attentionScore: z.number()
+                  .describe("Overall attention score (1-10) based on visual hierarchy, focal point strength, and eye-tracking patterns"),
+  colorImpact: z.number()
+               .describe("Impact of color choices (1-10) evaluating contrast, palette cohesion, and emotional resonance"),
+  readability: z.number()
+               .describe("Readability of on-pack text (1-10) assessing font choice, sizing, contrast, and information hierarchy"),
+  brandVisibility: z.number()
+                  .describe("Brand/logo visibility (1-10) measuring prominence, placement, and memorability"),
+  suggestions: z.array(z.string())
+               .describe("Specific, actionable design improvement suggestions"),
+  analysis: z.string()
+            .describe("Comprehensive analysis of the packaging design with specific strengths and weaknesses")
+});
+
+export type PackagingAnalysis = z.infer<typeof PackagingAnalysisSchema> & {
+  overallScore: number;
+};
+
+/* ------------------------------------------------------------------ */
+/* 3.  Utility – File ➜ base-64 string                                */
+/* ------------------------------------------------------------------ */
+
+export const fileToBase64 = (file: File): Promise<string> =>
+  new Promise((res, rej) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const base64 = (reader.result as string).split(",")[1]; // strip prefix
+      res(base64);
+    };
+    reader.onerror = rej;
+    reader.readAsDataURL(file);
+  });
+
+/* ------------------------------------------------------------------ */
+/* 4.  Vision request with structured output                          */
+/* ------------------------------------------------------------------ */
+
+export const analyzePackageDesign = async (
+  imageBase64: string
+): Promise<PackagingAnalysis> => {
+  try {
+    // Updated system prompt optimized for reasoning models
+    const systemPrompt = `
+You are a packaging design expert. Your goal is to evaluate consumer product packaging and provide actionable insights.
+
+Evaluate the packaging based on:
+- Attention attraction (scoring 1-10)
+- Color impact (scoring 1-10)
+- Text readability (scoring 1-10)
+- Brand visibility (scoring 1-10)
+
+Consider factors such as visual hierarchy, color psychology, typography effectiveness, and brand prominence.
+
+Provide specific improvement suggestions that would measurably increase the package's effectiveness.
+`;
+
+    const response = await openai.responses.parse({
+      model: "o4-mini", // Using the o4-mini reasoning model
+      reasoning: { 
+        effort: "high",  // Using high reasoning effort for detailed analysis
+        summary: "auto"  // Request the reasoning summary if available
+      },
+      input: [
+        {
+          role: "system",
+          content: [
+            {
+              type: "input_text",
+              text: systemPrompt
+            }
+          ]
+        },
+        {
+          role: "user",
+          content: [
+            {
+              type: "input_text",
+              text: "Analyze this packaging design and provide an expert evaluation."
+            },
+            {
+              type: "input_image",
+              image_url: `data:image/jpeg;base64,${imageBase64}`
+            }
+          ]
+        }
+      ],
+      text: {
+        format: zodTextFormat(PackagingAnalysisSchema, "packageAnalysis")
+      }
+    });
+
+    // Calculate the overall score as the average of the individual scores
+    const parsedResponse = response.output_parsed;
+    const overallScore = calculateOverallScore(parsedResponse);
+    
+    // Check if reasoning summary is available
+    console.log("Response details:", response);
+
+    // Return the response with the added overall score
+    return {
+      ...parsedResponse,
+      overallScore
+    };
+  } catch (err) {
+    console.error("OpenAI vision error:", err);
+    /* graceful fallback so UI still renders */
+    const fallbackScore = 5;
+    return {
+      attentionScore: fallbackScore,
+      colorImpact: fallbackScore,
+      readability: fallbackScore,
+      brandVisibility: fallbackScore,
+      overallScore: fallbackScore,
+      suggestions: ["AI analysis failed – returned simulated scores."],
+      analysis: "Could not retrieve structured output from the model."
+    };
+  }
+};
+
+// Helper function to calculate the overall score
+function calculateOverallScore(analysis: z.infer<typeof PackagingAnalysisSchema>): number {
+  const { attentionScore, colorImpact, readability, brandVisibility } = analysis;
+  
+  // Calculate the average and round to 1 decimal place
+  const average = (attentionScore + colorImpact + readability + brandVisibility) / 4;
+  return Math.round(average * 10) / 10;
+}
+</file>
+
+<file path="src/lib/utils.ts">
+import { clsx, type ClassValue } from "clsx"
+import { twMerge } from "tailwind-merge"
+
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs))
+}
+</file>
+
+<file path="src/pages/DeployTest.tsx">
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { 
+  Card, 
+  CardContent, 
+  CardDescription, 
+  CardFooter, 
+  CardHeader, 
+  CardTitle 
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { toast } from "@/hooks/use-toast";
+import { Building, GraduationCap, Dumbbell, Hotel, Film, Hospital, Map, ArrowLeft } from "lucide-react";
+
+// Define location types directly in this file to avoid additional imports
+interface LocationType {
+  id: string;
+  type: string;
+  icon: any;
+  description: string;
+  available: {
+    refrigerated: number;
+    nonRefrigerated: number;
+  };
+}
+
+const locationTypes: LocationType[] = [
+  {
+    id: "office",
+    type: "Office",
+    icon: Building,
+    description: "Corporate and business offices",
+    available: {
+      refrigerated: 120,
+      nonRefrigerated: 200
+    }
+  },
+  {
+    id: "school",
+    type: "School",
+    icon: GraduationCap,
+    description: "K-12 and higher education facilities",
+    available: {
+      refrigerated: 80,
+      nonRefrigerated: 150
+    }
+  },
+  {
+    id: "gym",
+    type: "Gym",
+    icon: Dumbbell,
+    description: "Fitness centers and sports facilities",
+    available: {
+      refrigerated: 60,
+      nonRefrigerated: 100
+    }
+  },
+  {
+    id: "hotel",
+    type: "Hotel",
+    icon: Hotel,
+    description: "Hotels and accommodations",
+    available: {
+      refrigerated: 90,
+      nonRefrigerated: 130
+    }
+  },
+  {
+    id: "movie_theater",
+    type: "Movie Theater",
+    icon: Film,
+    description: "Cinemas and entertainment venues",
+    available: {
+      refrigerated: 40,
+      nonRefrigerated: 70
+    }
+  },
+  {
+    id: "hospital",
+    type: "Hospital",
+    icon: Hospital,
+    description: "Healthcare facilities and medical centers",
+    available: {
+      refrigerated: 50,
+      nonRefrigerated: 85
+    }
+  }
+];
+
+interface LocationSelection {
+  id: string;
+  count: number;
+}
+
+const DeployTest = () => {
+  const navigate = useNavigate();
+  const [isRefrigerated, setIsRefrigerated] = useState<boolean>(false);
+  const [selections, setSelections] = useState<LocationSelection[]>(
+    locationTypes.map(location => ({ id: location.id, count: 0 }))
+  );
+  const [totalSelected, setTotalSelected] = useState<number>(0);
+  const [showMap, setShowMap] = useState<boolean>(false);
+  
+  // Update total count whenever selections change
+  useEffect(() => {
+    const total = selections.reduce((sum, item) => sum + item.count, 0);
+    setTotalSelected(total);
+  }, [selections]);
+  
+  const handleCountChange = (locationId: string, newValue: string) => {
+    // Convert to number and ensure it's valid
+    const count = parseInt(newValue) || 0;
+    
+    // Get the current total without this location
+    const currentTotal = selections.reduce((sum, item) => 
+      item.id === locationId ? sum : sum + item.count, 0
+    );
+    
+    // Ensure we don't exceed 10 total
+    const newCount = Math.min(count, 10 - currentTotal);
+    
+    // Update the selection
+    setSelections(prev => 
+      prev.map(item => 
+        item.id === locationId ? { ...item, count: newCount } : item
+      )
+    );
+  };
+  
+  const handleSubmit = () => {
+    if (totalSelected === 0) {
+      toast({
+        title: "No locations selected",
+        description: "Please select at least one location to deploy your test",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    
+    // Open Stash sign-in in a new window/tab
+    window.open("https://app.inthestash.com/registration-form", "_blank");
+  };
+  
+  const handleCancel = () => {
+    navigate('/results');
+  };
+
+  const viewResults = () => {
+    // The Results page will now check localStorage for saved results
+    navigate('/results', { replace: true });
+  };
+  
+  const toggleMap = () => {
+    setShowMap(prev => !prev);
+  };
+  
+  // Get the available count for the current refrigeration setting
+  const getAvailableCount = (location: LocationType) => {
+    return isRefrigerated 
+      ? location.available.refrigerated 
+      : location.available.nonRefrigerated;
+  };
+  
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <header className="bg-white shadow-sm">
+        <div className="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8 flex justify-between items-center">
+          <h1 className="text-2xl font-bold text-gray-900">Stash Packaging-Attention MVP</h1>
+          
+          {/* Back to Results button in header */}
+          <Button 
+            variant="ghost" 
+            onClick={viewResults} 
+            className="flex items-center text-gray-600 hover:text-gray-900"
+          >
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back to Results
+          </Button>
+        </div>
+      </header>
+      
+      <main>
+        <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+          {/* Map toggle button */}
+          <div className="mb-4 flex justify-end">
+            <Button 
+              onClick={toggleMap} 
+              variant={showMap ? "default" : "outline"}
+              className="flex items-center"
+            >
+              <Map className="mr-2 h-4 w-4" />
+              {showMap ? "Hide Map" : "Show Map"}
+            </Button>
+          </div>
+          
+          {/* Flexible layout that changes with map visibility */}
+          <div className={`grid grid-cols-1 ${showMap ? 'md:grid-cols-5 gap-6' : ''}`}>
+            {/* Map area - only visible when toggled */}
+            {showMap && (
+              <div className="md:col-span-2 transition-all duration-300 ease-in-out">
+                <div className="bg-white rounded-lg shadow h-full overflow-hidden">
+                  <div className="bg-gray-100 p-4 border-b">
+                    <h2 className="font-medium">Available Locations</h2>
+                    <p className="text-sm text-gray-500">Interactive map of our test locations</p>
+                  </div>
+                  <div className="p-4 flex items-center justify-center bg-gray-50 h-[calc(100%-4rem)]">
+                    {/* Placeholder for the map image */}
+                    <div className="w-full h-full min-h-[400px] bg-gray-200 rounded flex items-center justify-center">
+                      <p className="text-gray-500 text-center">
+                        <Map className="h-12 w-12 mx-auto mb-2 text-gray-400" />
+                        Location Map<br/>
+                        <span className="text-sm">Coming soon</span>
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+            
+            {/* Main form area */}
+            <div className={showMap ? 'md:col-span-3' : ''}>
+              <Card>
+                <CardHeader>
+                  <CardTitle>Deploy Test</CardTitle>
+                  <CardDescription>
+                    Select up to 10 vending locations to deploy your packaging test
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-6">
+                    {/* Refrigeration toggle */}
+                    <div className="flex items-center justify-between bg-gray-50 p-4 rounded-lg">
+                      <div>
+                        <h3 className="font-medium">Refrigerated Products</h3>
+                        <p className="text-sm text-gray-500">
+                          Toggle to select between refrigerated and non-refrigerated vending locations
+                        </p>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <span className="text-sm font-medium">
+                          {isRefrigerated ? "Refrigerated" : "Non-Refrigerated"}
+                        </span>
+                        <div className="relative inline-block w-12 h-6 transition duration-200 ease-in-out rounded-full cursor-pointer">
+                          <input
+                            type="checkbox"
+                            id="refrigerated"
+                            className="hidden"
+                            checked={isRefrigerated}
+                            onChange={() => setIsRefrigerated(prev => !prev)}
+                          />
+                          <label
+                            htmlFor="refrigerated"
+                            className={`absolute inset-0 rounded-full ${
+                              isRefrigerated ? 'bg-blue-600' : 'bg-gray-300'
+                            } transition duration-200 ease-in-out cursor-pointer`}
+                          >
+                            <span
+                              className={`absolute inset-y-0 left-0 flex items-center justify-center w-6 h-6 bg-white rounded-full shadow transform transition duration-200 ease-in-out ${
+                                isRefrigerated ? 'translate-x-6' : 'translate-x-0'
+                              }`}
+                            ></span>
+                          </label>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Location selection */}
+                    <div>
+                      <h3 className="font-medium mb-4">Select Locations ({totalSelected}/10 selected)</h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {locationTypes.map(location => {
+                          const availableCount = getAvailableCount(location);
+                          const currentSelection = selections.find(s => s.id === location.id);
+                          const count = currentSelection ? currentSelection.count : 0;
+                          
+                          return (
+                            <div 
+                              key={location.id}
+                              className="border rounded-lg p-4 flex items-center justify-between"
+                            >
+                              <div className="flex items-center space-x-3">
+                                <div className="bg-gray-100 p-3 rounded-full">
+                                  <location.icon className="h-5 w-5 text-gray-600" />
+                                </div>
+                                <div>
+                                  <h4 className="font-medium">{location.type}</h4>
+                                  <p className="text-sm text-gray-500">{availableCount} available</p>
+                                </div>
+                              </div>
+                              <div className="flex-shrink-0 w-20">
+                                <Input
+                                  type="number"
+                                  min="0"
+                                  max={Math.min(availableCount, 10 - (totalSelected - count))}
+                                  value={count}
+                                  onChange={(e) => handleCountChange(location.id, e.target.value)}
+                                  className="text-center"
+                                />
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                    
+                    {/* Selection Summary */}
+                    {totalSelected > 0 && (
+                      <div className="bg-gray-50 p-4 rounded-lg">
+                        <h3 className="font-medium mb-2">Your Selection</h3>
+                        <ul className="space-y-1">
+                          {selections
+                            .filter(s => s.count > 0)
+                            .map(selection => {
+                              const location = locationTypes.find(l => l.id === selection.id);
+                              return (
+                                <li key={selection.id} className="text-sm">
+                                  {selection.count} {location?.type} locations
+                                </li>
+                              );
+                            })
+                          }
+                        </ul>
+                        <div className="mt-3 pt-3 border-t border-gray-200 flex justify-between">
+                          <span className="font-medium">Total Locations:</span>
+                          <span className="font-bold">{totalSelected}/10</span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+                <CardFooter className="flex justify-between">
+                  <Button variant="outline" onClick={handleCancel}>
+                    Cancel
+                  </Button>
+                  <Button 
+                    onClick={handleSubmit}
+                    disabled={totalSelected === 0}
+                  >
+                    Deploy Test
+                  </Button>
+                </CardFooter>
+              </Card>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  );
+};
+
+export default DeployTest;
+</file>
+
+<file path="src/pages/Index.tsx">
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { toast } from "@/hooks/use-toast";
+import { Loader } from "lucide-react";
+
+interface UploadedImage {
+  id: string;
+  file: File;
+  preview: string;
+}
+
+const Index = () => {
+  const [uploadedImages, setUploadedImages] = useState<UploadedImage[]>([]);
+  const [isDragging, setIsDragging] = useState<boolean>(false);
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const navigate = useNavigate();
+  
+  const handleImageUpload = (files: FileList | null) => {
+    if (!files) return;
+    
+    // Check if adding these files would exceed the limit of 3
+    if (uploadedImages.length + files.length > 3) {
+      toast({
+        title: "Upload limit exceeded",
+        description: "You can upload a maximum of 3 images",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    const newImages: UploadedImage[] = [];
+    
+    Array.from(files).forEach(file => {
+      // Only accept PNG and JPG
+      if (!file.type.match('image/jpeg|image/png')) {
+        toast({
+          title: "Invalid file type",
+          description: "Only JPG and PNG files are allowed",
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      const id = `img_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      newImages.push({
+        id,
+        file,
+        preview: URL.createObjectURL(file)
+      });
+    });
+    
+    setUploadedImages(prev => [...prev, ...newImages]);
+  };
+  
+  const removeImage = (id: string) => {
+    setUploadedImages(prev => {
+      const filtered = prev.filter(img => img.id !== id);
+      return filtered;
+    });
+  };
+  
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+  
+  const handleDragLeave = () => {
+    setIsDragging(false);
+  };
+  
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragging(false);
+    handleImageUpload(e.dataTransfer.files);
+  };
+  
+  const handleSubmit = async () => {
+    if (uploadedImages.length === 0) {
+      toast({
+        title: "No images selected",
+        description: "Please upload at least one image",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    setIsSubmitting(true);
+    
+    try {
+      // Simulate API delay
+      await new Promise(resolve => setTimeout(resolve, 800));
+      
+      // Navigate to results page with the uploaded images data
+      navigate('/results', { state: { uploadedImages } });
+    } catch (error) {
+      console.error("Error submitting images:", error);
+      toast({
+        title: "Submission error",
+        description: "There was a problem submitting your images. Please try again.",
+        variant: "destructive"
+      });
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <header className="bg-white shadow-sm">
+        <div className="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8">
+          <h1 className="text-2xl font-bold text-gray-900">Stash Packaging-Attention MVP</h1>
+        </div>
+      </header>
+      
+      <main>
+        <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+          <Card>
+            <CardHeader>
+              <CardTitle>Package Analysis</CardTitle>
+              <CardDescription>
+                Upload 1-3 images of CPG packages to analyze attention and get design suggestions
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div 
+                className={`border-2 border-dashed rounded-lg p-8 text-center ${isDragging ? 'border-blue-500 bg-blue-50' : 'border-gray-300'}`}
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+              >
+                <div className="space-y-4">
+                  <div className="flex justify-center">
+                    <svg className="h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                    </svg>
+                  </div>
+                  <p className="text-sm text-gray-600">
+                    Drag and drop your package images here, or
+                  </p>
+                  <div>
+                    <label htmlFor="file-upload" className="cursor-pointer rounded-md font-medium text-blue-600 hover:text-blue-500">
+                      <span>Select files</span>
+                      <input
+                        id="file-upload"
+                        name="file-upload"
+                        type="file"
+                        className="sr-only"
+                        accept="image/png,image/jpeg"
+                        multiple
+                        onChange={(e) => handleImageUpload(e.target.files)}
+                      />
+                    </label>
+                  </div>
+                  <p className="text-xs text-gray-500">
+                    PNG, JPG up to 10MB (max 3 images)
+                  </p>
+                </div>
+              </div>
+              
+              {uploadedImages.length > 0 && (
+                <div className="mt-6">
+                  <h3 className="text-lg font-medium text-gray-900">Uploaded Images</h3>
+                  <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                    {uploadedImages.map((image) => (
+                      <div key={image.id} className="relative">
+                        <img
+                          src={image.preview}
+                          alt="Preview"
+                          className="h-40 w-full object-cover rounded-md"
+                        />
+                        <button
+                          onClick={() => removeImage(image.id)}
+                          className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                        >
+                          <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </CardContent>
+            <CardFooter>
+              <Button 
+                onClick={handleSubmit}
+                disabled={uploadedImages.length === 0 || isSubmitting}
+                className="ml-auto"
+              >
+                {isSubmitting ? (
+                  <>
+                    <Loader className="mr-2 h-4 w-4 animate-spin" />
+                    Processing...
+                  </>
+                ) : (
+                  "Analyze Packages"
+                )}
+              </Button>
+            </CardFooter>
+          </Card>
+        </div>
+      </main>
+    </div>
+  );
+};
+
+export default Index;
+</file>
+
+<file path="src/pages/NotFound.tsx">
+import { useLocation } from "react-router-dom";
+import { useEffect } from "react";
+
+const NotFound = () => {
+  const location = useLocation();
+
+  useEffect(() => {
+    console.error(
+      "404 Error: User attempted to access non-existent route:",
+      location.pathname
+    );
+  }, [location.pathname]);
+
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gray-100">
+      <div className="text-center">
+        <h1 className="text-4xl font-bold mb-4">404</h1>
+        <p className="text-xl text-gray-600 mb-4">Oops! Page not found</p>
+        <a href="/" className="text-blue-500 hover:text-blue-700 underline">
+          Return to Home
+        </a>
+      </div>
+    </div>
+  );
+};
+
+export default NotFound;
+</file>
+
+<file path="src/pages/Results.tsx">
+import React, { useEffect, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Loader, ArrowUp, CircleCheck } from "lucide-react";
+import { toast } from "@/hooks/use-toast";
+import { analyzeImages } from '@/lib/api';
+
+interface AnalysisResult {
+  imageId: string;
+  originalSrc: string;
+  heatmapSrc: string;
+  attentionScore: number;
+  colorImpact: number;
+  readability: number;
+  brandVisibility: number;
+  overallScore: number;
+  suggestions: string[];
+  aiAnalysis?: string;
+}
+
+
+// Score card component for displaying individual scores
+const ScoreCard = ({ label, score }: { label: string; score: number }) => (
+  <div className="flex flex-col items-center bg-gray-50 rounded-lg p-3 text-center">
+    <div className="text-sm text-gray-600 mb-1">{label}</div>
+    <div className={`text-2xl font-bold ${score >= 8 ? 'text-green-600' : score >= 6 ? 'text-blue-600' : 'text-orange-500'}`}>
+      {score.toFixed(1)}
+    </div>
+  </div>
+);
+
+const Results = () => {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const [results, setResults] = useState<AnalysisResult[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [activeTab, setActiveTab] = useState<string>("original");
+  
+  // Get the uploaded images from the location state
+  const uploadedImages = location.state?.uploadedImages || [];
+  
+  // In Results.tsx - add this near the beginning of the component
+useEffect(() => {
+  if (!uploadedImages.length) {
+    // If we're coming back from deploy page, check localStorage for saved results
+    const savedResults = localStorage.getItem('analysisResults');
+    
+    if (savedResults) {
+      setResults(JSON.parse(savedResults));
+      setLoading(false);
+    } else {
+      // No saved results and no uploaded images, navigate to home
+      navigate('/');
+      toast({
+        title: "No images to analyze",
+        description: "Please upload images first",
+        variant: "destructive"
+      });
+    }
+    return;
+  }
+  
+  const performAnalysis = async () => {
+    try {
+      setLoading(true);
+      const analysisResults = await analyzeImages(uploadedImages);
+      setResults(analysisResults);
+      
+      // Save results to localStorage
+      localStorage.setItem('analysisResults', JSON.stringify(analysisResults));
+      
+      setLoading(false);
+    } catch (error) {
+      console.error("Error during analysis:", error);
+      toast({
+        title: "Analysis failed",
+        description: "There was an error processing your images. Please try again.",
+        variant: "destructive"
+      });
+      setLoading(false);
+    }
+  };
+  
+  performAnalysis();
+}, [uploadedImages, navigate]);
+  
+  const handleNewAnalysis = () => {
+    navigate('/');
+  };
+  
+    // Update the handleDeployTest function
+  const handleDeployTest = () => {
+    // Make sure results are saved before navigating
+    if (results.length > 0) {
+      localStorage.setItem('analysisResults', JSON.stringify(results));
+    }
+    navigate('/deploy');
+  };
+  
+  const renderLoadingState = () => (
+    <div className="flex flex-col items-center justify-center py-20">
+      <div className="mb-4">
+        <Loader className="h-12 w-12 text-primary animate-spin" />
+      </div>
+      <h3 className="text-xl font-medium">Analyzing your packaging...</h3>
+      <p className="text-gray-500 mt-2">This may take a minute. We're running our attention model to identify key areas.</p>
+    </div>
+  );
+  
+  const renderResults = () => (
+    <div className="space-y-8">
+      <Tabs defaultValue="original" value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="grid w-full grid-cols-3 mb-6">
+          <TabsTrigger value="original">Original Images</TabsTrigger>
+          <TabsTrigger value="heatmap">Attention Heatmaps</TabsTrigger>
+          <TabsTrigger value="ai">AI Analysis</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="original" className="space-y-6">
+          {results.map((result) => (
+            <Card key={result.imageId} className="overflow-hidden">
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <CircleCheck className="mr-2 h-5 w-5 text-green-500" />
+                  Packaging Analysis
+                </CardTitle>
+                <CardDescription>
+                  Overall Score: <span className="font-bold text-lg">{result.overallScore.toFixed(1)}/10</span>
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="relative">
+                  <img 
+                    src={result.originalSrc} 
+                    alt="Original packaging" 
+                    className="w-full rounded-md object-contain max-h-80"
+                  />
+                </div>
+                
+                {/* Score metrics grid */}
+                <div className="grid grid-cols-4 gap-3 my-4">
+                  <ScoreCard label="Attention" score={result.attentionScore} />
+                  <ScoreCard label="Color Impact" score={result.colorImpact} />
+                  <ScoreCard label="Readability" score={result.readability} />
+                  <ScoreCard label="Brand Visibility" score={result.brandVisibility} />
+                </div>
+                
+                <div className="mt-4">
+                  <h4 className="font-medium text-lg mb-2">Design Suggestions</h4>
+                  <ul className="list-disc pl-5 space-y-1">
+                    {result.suggestions.map((suggestion, index) => (
+                      <li key={index} className="text-gray-700">{suggestion}</li>
+                    ))}
+                  </ul>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </TabsContent>
+        
+        <TabsContent value="heatmap" className="space-y-6">
+          {results.map((result) => (
+            <Card key={`heatmap-${result.imageId}`} className="overflow-hidden">
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <CircleCheck className="mr-2 h-5 w-5 text-green-500" />
+                  Attention Heatmap
+                </CardTitle>
+                <CardDescription>
+                  Areas in red receive more attention, blue areas receive less
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="relative">
+                  <img 
+                    src={result.heatmapSrc} 
+                    alt="Attention heatmap" 
+                    className="w-full rounded-md object-contain max-h-80"
+                  />
+                </div>
+                <div className="mt-4 bg-gray-50 p-4 rounded-md">
+                  <p className="text-sm text-gray-700">
+                    This heatmap shows which areas of your packaging attract the most visual attention. 
+                    Bright areas indicate high attention, while darker areas receive less focus.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </TabsContent>
+        
+        <TabsContent value="ai" className="space-y-6">
+          {results.map((result) => (
+            <Card key={`ai-${result.imageId}`} className="overflow-hidden">
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <CircleCheck className="mr-2 h-5 w-5 text-green-500" />
+                  AI Design Analysis
+                </CardTitle>
+                <CardDescription>
+                  Complete AI analysis of your packaging design
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid md:grid-cols-2 gap-6">
+                  <div>
+                    <img 
+                      src={result.originalSrc} 
+                      alt="Original packaging" 
+                      className="w-full rounded-md object-contain max-h-80"
+                    />
+                    
+                    {/* Add score cards to AI tab as well */}
+                    <div className="grid grid-cols-2 gap-2 mt-4">
+                      <ScoreCard label="Overall" score={result.overallScore} />
+                      <ScoreCard label="Attention" score={result.attentionScore} />
+                      <ScoreCard label="Color Impact" score={result.colorImpact} />
+                      <ScoreCard label="Readability" score={result.readability} />
+                    </div>
+                  </div>
+                  <div className="bg-gray-50 p-4 rounded-md">
+                    <h4 className="font-medium text-lg mb-2">AI Analysis</h4>
+                    {result.aiAnalysis ? (
+                      <div className="text-sm whitespace-pre-wrap">
+                        {result.aiAnalysis}
+                      </div>
+                    ) : (
+                      <p className="text-gray-500 italic">
+                        No AI analysis available.
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </TabsContent>
+      </Tabs>
+      
+      {/* Create a single button container for all three buttons */}
+      <div className="flex justify-between items-center">
+        <div className="flex gap-4">
+          <Button 
+            onClick={handleNewAnalysis} 
+            className="flex items-center"
+          >
+            <ArrowUp className="mr-2 h-4 w-4" />
+            Analyze New Images
+          </Button>
+
+        </div>
+        
+        <Button onClick={handleDeployTest} variant="default">
+          Deploy Test
+        </Button>
+      </div>
+    </div>
+  );
+  
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <header className="bg-white shadow-sm">
+        <div className="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8">
+          <h1 className="text-2xl font-bold text-gray-900">Stash Packaging-Attention MVP</h1>
+        </div>
+      </header>
+      
+      <main>
+        <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+          <Card>
+            <CardHeader>
+              <CardTitle>Analysis Results</CardTitle>
+              <CardDescription>
+                Review how your packaging performs on visual attention metrics
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {loading ? renderLoadingState() : renderResults()}
+            </CardContent>
+            {/* Remove buttons from CardFooter since they're now in the renderResults */}
+            <CardFooter>
+              {/* Footer is empty now, buttons moved to main content area */}
+            </CardFooter>
+          </Card>
+        </div>
+      </main>
+    </div>
+  );
+};
+
+export default Results;
+</file>
+
+<file path="src/App.tsx">
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { Toaster } from "@/components/ui/toaster";
+import Index from "./pages/Index";
+import Results from "./pages/Results";
+import DeployTest from "./pages/DeployTest"; // New import
+import NotFound from "./pages/NotFound";
+
+function App() {
+  return (
+    <Router>
+      <Routes>
+        <Route path="/" element={<Index />} />
+        <Route path="/results" element={<Results />} />
+        <Route path="/deploy" element={<DeployTest />} /> {/* New route */}
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+      <Toaster />
+    </Router>
+  );
+}
+
+export default App;
+</file>
+
+<file path="src/main.tsx">
+import { createRoot } from 'react-dom/client'
+import App from './App.tsx'
+import './index.css'
+
+createRoot(document.getElementById("root")!).render(<App />);
+</file>
+
+<file path="src/vite-env.d.ts">
+/// <reference types="vite/client" />
+</file>
+
+<file path=".gitignore">
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+
+*.css
+src/components/ui
+src/hooks
+*.json
+*.svg
+*.mjs
+</file>
+
+<file path="eslint.config.js">
+import js from "@eslint/js";
+import globals from "globals";
+import reactHooks from "eslint-plugin-react-hooks";
+import reactRefresh from "eslint-plugin-react-refresh";
+import tseslint from "typescript-eslint";
+
+export default tseslint.config(
+  { ignores: ["dist"] },
+  {
+    extends: [js.configs.recommended, ...tseslint.configs.recommended],
+    files: ["**/*.{ts,tsx}"],
+    languageOptions: {
+      ecmaVersion: 2020,
+      globals: globals.browser,
+    },
+    plugins: {
+      "react-hooks": reactHooks,
+      "react-refresh": reactRefresh,
+    },
+    rules: {
+      ...reactHooks.configs.recommended.rules,
+      "react-refresh/only-export-components": [
+        "warn",
+        { allowConstantExport: true },
+      ],
+      "@typescript-eslint/no-unused-vars": "off",
+    },
+  }
+);
+</file>
+
+<file path="index.html">
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Stash Packaging-Attention MVP</title>
+    <meta name="description" content="Analyze CPG packaging images for attention optimization" />
+    <meta name="author" content="Lovable" />
+
+    <meta property="og:title" content="Stash Packaging-Attention MVP" />
+    <meta property="og:description" content="Analyze CPG packaging images for attention optimization" />
+    <meta property="og:type" content="website" />
+    <meta property="og:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:site" content="@lovable_dev" />
+    <meta name="twitter:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
+  </head>
+
+  <body>
+    <div id="root"></div>
+    <!-- IMPORTANT: DO NOT REMOVE THIS SCRIPT TAG OR THIS VERY COMMENT! -->
+    <script src="https://cdn.gpteng.co/gptengineer.js" type="module"></script>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
+</file>
+
+<file path="postcss.config.js">
+export default {
+  plugins: {
+    tailwindcss: {},
+    autoprefixer: {},
+  },
+}
+</file>
+
+<file path="README.md">
+# Welcome to your Lovable project
+
+## Project info
+
+**URL**: https://lovable.dev/projects/20d4138e-3281-4ae6-9c24-925fb48497f8
+
+## How can I edit this code?
+
+There are several ways of editing your application.
+
+**Use Lovable**
+
+Simply visit the [Lovable Project](https://lovable.dev/projects/20d4138e-3281-4ae6-9c24-925fb48497f8) and start prompting.
+
+Changes made via Lovable will be committed automatically to this repo.
+
+**Use your preferred IDE**
+
+If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+
+The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+
+Follow these steps:
+
+```sh
+# Step 1: Clone the repository using the project's Git URL.
+git clone <YOUR_GIT_URL>
+
+# Step 2: Navigate to the project directory.
+cd <YOUR_PROJECT_NAME>
+
+# Step 3: Install the necessary dependencies.
+npm i
+
+# Step 4: Start the development server with auto-reloading and an instant preview.
+npm run dev
+```
+
+**Edit a file directly in GitHub**
+
+- Navigate to the desired file(s).
+- Click the "Edit" button (pencil icon) at the top right of the file view.
+- Make your changes and commit the changes.
+
+**Use GitHub Codespaces**
+
+- Navigate to the main page of your repository.
+- Click on the "Code" button (green button) near the top right.
+- Select the "Codespaces" tab.
+- Click on "New codespace" to launch a new Codespace environment.
+- Edit files directly within the Codespace and commit and push your changes once you're done.
+
+## What technologies are used for this project?
+
+This project is built with:
+
+- Vite
+- TypeScript
+- React
+- shadcn-ui
+- Tailwind CSS
+
+## How can I deploy this project?
+
+Simply open [Lovable](https://lovable.dev/projects/20d4138e-3281-4ae6-9c24-925fb48497f8) and click on Share -> Publish.
+
+## Can I connect a custom domain to my Lovable project?
+
+Yes, you can!
+
+To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+
+Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+</file>
+
+<file path="tailwind.config.ts">
+import type { Config } from "tailwindcss";
+
+export default {
+	darkMode: ["class"],
+	content: [
+		"./pages/**/*.{ts,tsx}",
+		"./components/**/*.{ts,tsx}",
+		"./app/**/*.{ts,tsx}",
+		"./src/**/*.{ts,tsx}",
+	],
+	prefix: "",
+	theme: {
+		container: {
+			center: true,
+			padding: '2rem',
+			screens: {
+				'2xl': '1400px'
+			}
+		},
+		extend: {
+			colors: {
+				border: 'hsl(var(--border))',
+				input: 'hsl(var(--input))',
+				ring: 'hsl(var(--ring))',
+				background: 'hsl(var(--background))',
+				foreground: 'hsl(var(--foreground))',
+				primary: {
+					DEFAULT: 'hsl(var(--primary))',
+					foreground: 'hsl(var(--primary-foreground))'
+				},
+				secondary: {
+					DEFAULT: 'hsl(var(--secondary))',
+					foreground: 'hsl(var(--secondary-foreground))'
+				},
+				destructive: {
+					DEFAULT: 'hsl(var(--destructive))',
+					foreground: 'hsl(var(--destructive-foreground))'
+				},
+				muted: {
+					DEFAULT: 'hsl(var(--muted))',
+					foreground: 'hsl(var(--muted-foreground))'
+				},
+				accent: {
+					DEFAULT: 'hsl(var(--accent))',
+					foreground: 'hsl(var(--accent-foreground))'
+				},
+				popover: {
+					DEFAULT: 'hsl(var(--popover))',
+					foreground: 'hsl(var(--popover-foreground))'
+				},
+				card: {
+					DEFAULT: 'hsl(var(--card))',
+					foreground: 'hsl(var(--card-foreground))'
+				},
+				sidebar: {
+					DEFAULT: 'hsl(var(--sidebar-background))',
+					foreground: 'hsl(var(--sidebar-foreground))',
+					primary: 'hsl(var(--sidebar-primary))',
+					'primary-foreground': 'hsl(var(--sidebar-primary-foreground))',
+					accent: 'hsl(var(--sidebar-accent))',
+					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
+					border: 'hsl(var(--sidebar-border))',
+					ring: 'hsl(var(--sidebar-ring))'
+				}
+			},
+			borderRadius: {
+				lg: 'var(--radius)',
+				md: 'calc(var(--radius) - 2px)',
+				sm: 'calc(var(--radius) - 4px)'
+			},
+			keyframes: {
+				'accordion-down': {
+					from: {
+						height: '0'
+					},
+					to: {
+						height: 'var(--radix-accordion-content-height)'
+					}
+				},
+				'accordion-up': {
+					from: {
+						height: 'var(--radix-accordion-content-height)'
+					},
+					to: {
+						height: '0'
+					}
+				}
+			},
+			animation: {
+				'accordion-down': 'accordion-down 0.2s ease-out',
+				'accordion-up': 'accordion-up 0.2s ease-out'
+			}
+		}
+	},
+	plugins: [require("tailwindcss-animate")],
+} satisfies Config;
+</file>
+
+<file path="vite.config.ts">
+import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react-swc";
+import path from "path";
+import { componentTagger } from "lovable-tagger";
+
+// https://vitejs.dev/config/
+export default defineConfig(({ mode }) => ({
+  server: {
+    host: "::",
+    port: 8080,
+  },
+
+  plugins: [
+    react(),
+    mode === "development" && componentTagger(),
+  ].filter(Boolean),
+
+  resolve: {
+    alias: {
+      "@": path.resolve(__dirname, "src"),       //  ➜  import "@/foo"
+    },
+  },
+
+  // Small shim so the OpenAI SDK’s `crypto` fallback works in the browser.
+  define: { global: "globalThis" },
+}));
+</file>
+
+</files>
