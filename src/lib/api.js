@@ -3,7 +3,7 @@ import {
   analyzePackageDesign,
   fileToBase64
 } from "./openai";
-import { generateAttentionHeatmap } from "./canvasHeatmap";
+import { generateAttentionHeatmap } from "./canvasHeatmap.js";
 
 /* ---------- Public function -------------------------------------- */
 
