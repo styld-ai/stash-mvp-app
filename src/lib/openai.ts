@@ -6,7 +6,7 @@ import { z } from "zod";
 /* 1.  OpenAI client                                                  */
 /* ------------------------------------------------------------------ */
 
-// Use environment variable instead of hardcoded API key
+// Use environment variable instead of hard‑coded API key
 const OPENAI_API_KEY = import.meta.env.VITE_OPENAI_API_KEY;
 
 const openai = new OpenAI({
@@ -20,17 +20,17 @@ const openai = new OpenAI({
 
 export const PackagingAnalysisSchema = z.object({
   attentionScore: z.number()
-                  .describe("Overall attention score (1-10) based on visual hierarchy, focal point strength, and eye-tracking patterns"),
+    .describe("Overall attention score (1‑10) based on visual hierarchy, focal point strength, and eye‑tracking patterns"),
   colorImpact: z.number()
-               .describe("Impact of color choices (1-10) evaluating contrast, palette cohesion, and emotional resonance"),
+    .describe("Impact of color choices (1‑10) evaluating contrast, palette cohesion, and emotional resonance"),
   readability: z.number()
-               .describe("Readability of on-pack text (1-10) assessing font choice, sizing, contrast, and information hierarchy"),
+    .describe("Readability of on‑pack text (1‑10) assessing font choice, sizing, contrast, and information hierarchy"),
   brandVisibility: z.number()
-                  .describe("Brand/logo visibility (1-10) measuring prominence, placement, and memorability"),
+    .describe("Brand/logo visibility (1‑10) measuring prominence, placement, and memorability"),
   suggestions: z.array(z.string())
-               .describe("Specific, actionable design improvement suggestions"),
+    .describe("Specific, actionable design improvement suggestions"),
   analysis: z.string()
-            .describe("Comprehensive analysis of the packaging design with specific strengths and weaknesses")
+    .describe("Comprehensive analysis of the packaging design with specific strengths and weaknesses")
 });
 
 export type PackagingAnalysis = z.infer<typeof PackagingAnalysisSchema> & {
@@ -38,7 +38,7 @@ export type PackagingAnalysis = z.infer<typeof PackagingAnalysisSchema> & {
 };
 
 /* ------------------------------------------------------------------ */
-/* 3.  Utility – File ➜ base-64 string                                */
+/* 3.  Utility – File ➜ base‑64 string                                */
 /* ------------------------------------------------------------------ */
 
 export const fileToBase64 = (file: File): Promise<string> =>
@@ -60,7 +60,7 @@ export const analyzePackageDesign = async (
   imageBase64: string
 ): Promise<PackagingAnalysis> => {
   try {
-    // Updated system prompt optimized for reasoning models
+    // System prompt
     const systemPrompt = `
 You are a packaging design expert. Your goal is to evaluate consumer product packaging and provide actionable insights.
 
@@ -76,32 +76,28 @@ Provide specific improvement suggestions that would measurably increase the pack
 `;
 
     const response = await openai.responses.parse({
-      model: "o4-mini", // Using the o4-mini reasoning model
-      reasoning: { 
-        effort: "high",  // Using high reasoning effort for detailed analysis
-        summary: "auto"  // Request the reasoning summary if available
+      model: "o3",                       // switched to o3
+      reasoning: {
+        effort: "high",
+        summary: "auto"
       },
       input: [
         {
           role: "system",
           content: [
-            {
-              type: "input_text",
-              text: systemPrompt
-            }
+            { type: "input_text", text: systemPrompt }
           ]
         },
         {
           role: "user",
           content: [
-            {
-              type: "input_text",
-              text: "Analyze this packaging design and provide an expert evaluation."
-            },
+            { type: "input_text", text: "Analyze this packaging design and provide an expert evaluation." },
             {
               type: "input_image",
-              image_url: `data:image/jpeg;base64,${imageBase64}`
-            }
+              image_url: `data:image/jpeg;base64,${imageBase64}`,
+                detail: "high"          // explicitly request high‑resolution vision
+              }
+            
           ]
         }
       ],
@@ -113,11 +109,9 @@ Provide specific improvement suggestions that would measurably increase the pack
     // Calculate the overall score as the average of the individual scores
     const parsedResponse = response.output_parsed;
     const overallScore = calculateOverallScore(parsedResponse);
-    
-    // Check if reasoning summary is available
+
     console.log("Response details:", response);
 
-    // Return the response with the added overall score
     return {
       ...parsedResponse,
       overallScore
@@ -139,10 +133,10 @@ Provide specific improvement suggestions that would measurably increase the pack
 };
 
 // Helper function to calculate the overall score
-function calculateOverallScore(analysis: z.infer<typeof PackagingAnalysisSchema>): number {
+function calculateOverallScore(
+  analysis: z.infer<typeof PackagingAnalysisSchema>
+): number {
   const { attentionScore, colorImpact, readability, brandVisibility } = analysis;
-  
-  // Calculate the average and round to 1 decimal place
   const average = (attentionScore + colorImpact + readability + brandVisibility) / 4;
   return Math.round(average * 10) / 10;
 }
