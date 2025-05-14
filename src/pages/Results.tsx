@@ -218,6 +218,8 @@ const Results = () => {
                       <ScoreCard label="Attention" score={result.attentionScore} />
                       <ScoreCard label="Color Impact" score={result.colorImpact} />
                       <ScoreCard label="Readability" score={result.readability} />
+                      <ScoreCard label="Brand Visibility" score={result.brandVisibility} />
+
                     </div>
                   </div>
                   <div className="bg-gray-50 p-4 rounded-md">
@@ -250,9 +252,6 @@ const Results = () => {
             Analyze New Images
           </Button>
           
-          <Button variant="outline" onClick={handleNewAnalysis}>
-            Analyze Different Images
-          </Button>
         </div>
         
         <Button onClick={handleDeployTest} variant="default">
@@ -266,7 +265,7 @@ const Results = () => {
     <div className="min-h-screen bg-gray-50">
       <header className="bg-white shadow-sm">
         <div className="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8">
-          <h1 className="text-2xl font-bold text-gray-900">Stash Packaging-Attention MVP</h1>
+          <h1 className="text-2xl font-bold text-gray-900">Stash Packaging Test</h1>
         </div>
       </header>
       
