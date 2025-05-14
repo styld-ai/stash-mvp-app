@@ -45,12 +45,18 @@ The content is organized as follows:
 
 <directory_structure>
 public/
+  placeholder.svg
   robots.txt
 src/
+  hooks/
+    use-mobile.tsx
+    use-toast.ts
   lib/
-    api.ts
+    api.js
+    canvasheatmap.js
     locations.ts
     openai.ts
+    saliency.ts
     utils.ts
   pages/
     DeployTest.tsx
@@ -61,16 +67,26 @@ src/
   main.tsx
   vite-env.d.ts
 .gitignore
+components.json
 eslint.config.js
 index.html
+package.json
 postcss.config.js
 README.md
 tailwind.config.ts
+tsconfig.app.json
+tsconfig.json
+tsconfig.node.json
 vite.config.ts
+vite.config.ts.timestamp-1747032750866-d6e78ccb03e03.mjs
 </directory_structure>
 
 <files>
 This section contains the contents of the repository's files.
+
+<file path="public/placeholder.svg">
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="1200" fill="none"><rect width="1200" height="1200" fill="#EAEAEA" rx="3"/><g opacity=".5"><g opacity=".5"><path fill="#FAFAFA" d="M600.709 736.5c-75.454 0-136.621-61.167-136.621-136.62 0-75.454 61.167-136.621 136.621-136.621 75.453 0 136.62 61.167 136.62 136.621 0 75.453-61.167 136.62-136.62 136.62Z"/><path stroke="#C9C9C9" stroke-width="2.418" d="M600.709 736.5c-75.454 0-136.621-61.167-136.621-136.62 0-75.454 61.167-136.621 136.621-136.621 75.453 0 136.62 61.167 136.62 136.621 0 75.453-61.167 136.62-136.62 136.62Z"/></g><path stroke="url(#a)" stroke-width="2.418" d="M0-1.209h553.581" transform="scale(1 -1) rotate(45 1163.11 91.165)"/><path stroke="url(#b)" stroke-width="2.418" d="M404.846 598.671h391.726"/><path stroke="url(#c)" stroke-width="2.418" d="M599.5 795.742V404.017"/><path stroke="url(#d)" stroke-width="2.418" d="m795.717 796.597-391.441-391.44"/><path fill="#fff" d="M600.709 656.704c-31.384 0-56.825-25.441-56.825-56.824 0-31.384 25.441-56.825 56.825-56.825 31.383 0 56.824 25.441 56.824 56.825 0 31.383-25.441 56.824-56.824 56.824Z"/><g clip-path="url(#e)"><path fill="#666" fill-rule="evenodd" d="M616.426 586.58h-31.434v16.176l3.553-3.554.531-.531h9.068l.074-.074 8.463-8.463h2.565l7.18 7.181V586.58Zm-15.715 14.654 3.698 3.699 1.283 1.282-2.565 2.565-1.282-1.283-5.2-5.199h-6.066l-5.514 5.514-.073.073v2.876a2.418 2.418 0 0 0 2.418 2.418h26.598a2.418 2.418 0 0 0 2.418-2.418v-8.317l-8.463-8.463-7.181 7.181-.071.072Zm-19.347 5.442v4.085a6.045 6.045 0 0 0 6.046 6.045h26.598a6.044 6.044 0 0 0 6.045-6.045v-7.108l1.356-1.355-1.282-1.283-.074-.073v-17.989h-38.689v23.43l-.146.146.146.147Z" clip-rule="evenodd"/></g><path stroke="#C9C9C9" stroke-width="2.418" d="M600.709 656.704c-31.384 0-56.825-25.441-56.825-56.824 0-31.384 25.441-56.825 56.825-56.825 31.383 0 56.824 25.441 56.824 56.825 0 31.383-25.441 56.824-56.824 56.824Z"/></g><defs><linearGradient id="a" x1="554.061" x2="-.48" y1=".083" y2=".087" gradientUnits="userSpaceOnUse"><stop stop-color="#C9C9C9" stop-opacity="0"/><stop offset=".208" stop-color="#C9C9C9"/><stop offset=".792" stop-color="#C9C9C9"/><stop offset="1" stop-color="#C9C9C9" stop-opacity="0"/></linearGradient><linearGradient id="b" x1="796.912" x2="404.507" y1="599.963" y2="599.965" gradientUnits="userSpaceOnUse"><stop stop-color="#C9C9C9" stop-opacity="0"/><stop offset=".208" stop-color="#C9C9C9"/><stop offset=".792" stop-color="#C9C9C9"/><stop offset="1" stop-color="#C9C9C9" stop-opacity="0"/></linearGradient><linearGradient id="c" x1="600.792" x2="600.794" y1="403.677" y2="796.082" gradientUnits="userSpaceOnUse"><stop stop-color="#C9C9C9" stop-opacity="0"/><stop offset=".208" stop-color="#C9C9C9"/><stop offset=".792" stop-color="#C9C9C9"/><stop offset="1" stop-color="#C9C9C9" stop-opacity="0"/></linearGradient><linearGradient id="d" x1="404.85" x2="796.972" y1="403.903" y2="796.02" gradientUnits="userSpaceOnUse"><stop stop-color="#C9C9C9" stop-opacity="0"/><stop offset=".208" stop-color="#C9C9C9"/><stop offset=".792" stop-color="#C9C9C9"/><stop offset="1" stop-color="#C9C9C9" stop-opacity="0"/></linearGradient><clipPath id="e"><path fill="#fff" d="M581.364 580.535h38.689v38.689h-38.689z"/></clipPath></defs></svg>
+</file>
 
 <file path="public/robots.txt">
 User-agent: Googlebot
@@ -89,181 +105,335 @@ User-agent: *
 Allow: /
 </file>
 
-<file path="src/lib/api.ts">
-import { toast } from "@/hooks/use-toast";
-import {
-  PackagingAnalysis,
-  analyzePackageDesign,
-  fileToBase64
-} from "./openai";
+<file path="src/hooks/use-mobile.tsx">
+import * as React from "react"
 
-/* ---------- Local types ------------------------------------------ */
+const MOBILE_BREAKPOINT = 768
 
-interface UploadedImage {
-  id: string;
-  file: File;
-  preview: string;
+export function useIsMobile() {
+  const [isMobile, setIsMobile] = React.useState<boolean | undefined>(undefined)
+
+  React.useEffect(() => {
+    const mql = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT - 1}px)`)
+    const onChange = () => {
+      setIsMobile(window.innerWidth < MOBILE_BREAKPOINT)
+    }
+    mql.addEventListener("change", onChange)
+    setIsMobile(window.innerWidth < MOBILE_BREAKPOINT)
+    return () => mql.removeEventListener("change", onChange)
+  }, [])
+
+  return !!isMobile
+}
+</file>
+
+<file path="src/hooks/use-toast.ts">
+import * as React from "react"
+
+import type {
+  ToastActionElement,
+  ToastProps,
+} from "@/components/ui/toast"
+
+const TOAST_LIMIT = 1
+const TOAST_REMOVE_DELAY = 1000000
+
+type ToasterToast = ToastProps & {
+  id: string
+  title?: React.ReactNode
+  description?: React.ReactNode
+  action?: ToastActionElement
 }
 
-interface AnalysisResult {
-  imageId: string;
-  originalSrc: string;
-  heatmapSrc: string;
-  attentionScore: number;
-  colorImpact: number;
-  readability: number;
-  brandVisibility: number;
-  overallScore: number;
-  suggestions: string[];
-  aiAnalysis?: string;
+const actionTypes = {
+  ADD_TOAST: "ADD_TOAST",
+  UPDATE_TOAST: "UPDATE_TOAST",
+  DISMISS_TOAST: "DISMISS_TOAST",
+  REMOVE_TOAST: "REMOVE_TOAST",
+} as const
+
+let count = 0
+
+function genId() {
+  count = (count + 1) % Number.MAX_SAFE_INTEGER
+  return count.toString()
 }
 
-/* ---------- Public function -------------------------------------- */
+type ActionType = typeof actionTypes
 
-export const analyzeImages = async (
-  images: UploadedImage[]
-): Promise<AnalysisResult[]> => {
-  toast({
-    title: "Analyzing images",
-    description: "Running AI vision model…"
-  });
+type Action =
+  | {
+      type: ActionType["ADD_TOAST"]
+      toast: ToasterToast
+    }
+  | {
+      type: ActionType["UPDATE_TOAST"]
+      toast: Partial<ToasterToast>
+    }
+  | {
+      type: ActionType["DISMISS_TOAST"]
+      toastId?: ToasterToast["id"]
+    }
+  | {
+      type: ActionType["REMOVE_TOAST"]
+      toastId?: ToasterToast["id"]
+    }
 
-  return Promise.all(
-    images.map(async (image) => {
-      try {
-        /* 1️⃣  generate fake heatmap locally */
-        const heatmapSrc = await generateSimulatedHeatmap(image.preview);
+interface State {
+  toasts: ToasterToast[]
+}
 
-        /* 2️⃣  real AI analysis */
-        const base64 = await fileToBase64(image.file);
-        let analysis: PackagingAnalysis;
+const toastTimeouts = new Map<string, ReturnType<typeof setTimeout>>()
 
-        try {
-          analysis = await analyzePackageDesign(base64);
-        } catch (err) {
-          console.error("AI analysis failed:", err);
-          toast({
-            title: "AI analysis failed",
-            description: "Showing simulated scores instead.",
-            variant: "destructive"
-          });
-          const fallbackScore =
-            Math.round((4 + Math.random() * 5.5) * 10) / 10;
-          analysis = {
-            attentionScore: fallbackScore,
-            colorImpact: fallbackScore,
-            readability: fallbackScore,
-            brandVisibility: fallbackScore,
-            overallScore: fallbackScore,
-            suggestions: generateSuggestions(fallbackScore),
-            analysis: "Simulated analysis due to API error."
-          };
-        }
+const addToRemoveQueue = (toastId: string) => {
+  if (toastTimeouts.has(toastId)) {
+    return
+  }
 
-        /* 3️⃣  return combined result for UI */
-        return {
-          imageId: image.id,
-          originalSrc: image.preview,
-          heatmapSrc,
-          attentionScore: analysis.attentionScore,
-          colorImpact: analysis.colorImpact,
-          readability: analysis.readability,
-          brandVisibility: analysis.brandVisibility,
-          overallScore: analysis.overallScore,
-          suggestions: analysis.suggestions,
-          aiAnalysis: analysis.analysis
-        };
-      } catch (err) {
-        console.error("Unexpected analysis error:", err);
-        throw err;
-      }
+  const timeout = setTimeout(() => {
+    toastTimeouts.delete(toastId)
+    dispatch({
+      type: "REMOVE_TOAST",
+      toastId: toastId,
     })
-  );
-};
+  }, TOAST_REMOVE_DELAY)
 
-/* ---------- Helpers ---------------------------------------------- */
+  toastTimeouts.set(toastId, timeout)
+}
 
-/* Canvas-based pseudo heatmap */
-const generateSimulatedHeatmap = (url: string): Promise<string> =>
-  new Promise((resolve, reject) => {
-    const canvas = document.createElement("canvas");
-    const ctx = canvas.getContext("2d");
-    const img = new Image();
-
-    img.onload = () => {
-      canvas.width = img.width;
-      canvas.height = img.height;
-      if (!ctx) return reject(new Error("No 2D context"));
-
-      /* draw image first */
-      ctx.drawImage(img, 0, 0);
-
-      const { data } = ctx.getImageData(0, 0, canvas.width, canvas.height);
-
-      const cx = canvas.width / 2;
-      const cy = canvas.height / 2;
-
-      for (let y = 0; y < canvas.height; y++) {
-        for (let x = 0; x < canvas.width; x++) {
-          const i = (y * canvas.width + x) * 4;
-
-          /* simple heuristic: center + top gets hotter */
-          const d =
-            Math.sqrt(
-              ((x - cx) / (canvas.width / 2)) ** 2 +
-                ((y - cy) / (canvas.height / 2)) ** 2
-            ) || 0;
-          const topBoost = 1 - Math.min(y / (canvas.height / 3), 1);
-          let heat = (1 - d) * 0.6 + topBoost * 0.3 + Math.random() * 0.2;
-          heat = Math.max(0, Math.min(1, heat));
-
-          if (heat > 0.6) {
-            /* red-yellow */
-            data[i] = 255;
-            data[i + 1] = ((heat - 0.6) * 255) / 0.4;
-            data[i + 2] = 0;
-          } else {
-            /* blue-cyan-green */
-            data[i] = 0;
-            data[i + 1] = (heat * 255) / 0.6;
-            data[i + 2] = ((0.6 - heat) * 255) / 0.6;
-          }
-          data[i + 3] = 128 * heat; // alpha
-        }
+export const reducer = (state: State, action: Action): State => {
+  switch (action.type) {
+    case "ADD_TOAST":
+      return {
+        ...state,
+        toasts: [action.toast, ...state.toasts].slice(0, TOAST_LIMIT),
       }
 
-      ctx.putImageData(new ImageData(data, canvas.width, canvas.height), 0, 0);
+    case "UPDATE_TOAST":
+      return {
+        ...state,
+        toasts: state.toasts.map((t) =>
+          t.id === action.toast.id ? { ...t, ...action.toast } : t
+        ),
+      }
 
-      ctx.globalAlpha = 0.7;
-      ctx.drawImage(img, 0, 0);
+    case "DISMISS_TOAST": {
+      const { toastId } = action
 
-      resolve(canvas.toDataURL("image/jpeg"));
-    };
+      // ! Side effects ! - This could be extracted into a dismissToast() action,
+      // but I'll keep it here for simplicity
+      if (toastId) {
+        addToRemoveQueue(toastId)
+      } else {
+        state.toasts.forEach((toast) => {
+          addToRemoveQueue(toast.id)
+        })
+      }
 
-    img.onerror = () =>
-      reject(new Error("Failed to load image for heatmap generation"));
+      return {
+        ...state,
+        toasts: state.toasts.map((t) =>
+          t.id === toastId || toastId === undefined
+            ? {
+                ...t,
+                open: false,
+              }
+            : t
+        ),
+      }
+    }
+    case "REMOVE_TOAST":
+      if (action.toastId === undefined) {
+        return {
+          ...state,
+          toasts: [],
+        }
+      }
+      return {
+        ...state,
+        toasts: state.toasts.filter((t) => t.id !== action.toastId),
+      }
+  }
+}
 
-    img.src = url;
-  });
+const listeners: Array<(state: State) => void> = []
 
-/* Suggestion generator */
-const generateSuggestions = (score: number): string[] => {
-  const ideas = [
-    "Increase contrast between product name and background.",
-    "Use a larger font for key claims.",
-    "Position the logo in the top third for maximum noticeability.",
-    "Reduce visual clutter to focus attention on core message.",
-    "Consider higher-saturation colors for stronger shelf pop.",
-    "Add negative space around hero elements.",
-    "Try a distinctive die-cut or silhouette.",
-    "Apply the rule of thirds to layout.",
-    "Add texture contrast to make elements pop.",
-    "Re-evaluate hierarchy based on consumer priorities."
-  ];
-  const shuffled = ideas.sort(() => 0.5 - Math.random());
-  const n = Math.max(2, Math.min(5, Math.round(10 - score)));
-  return shuffled.slice(0, n);
-};
+let memoryState: State = { toasts: [] }
+
+function dispatch(action: Action) {
+  memoryState = reducer(memoryState, action)
+  listeners.forEach((listener) => {
+    listener(memoryState)
+  })
+}
+
+type Toast = Omit<ToasterToast, "id">
+
+function toast({ ...props }: Toast) {
+  const id = genId()
+
+  const update = (props: ToasterToast) =>
+    dispatch({
+      type: "UPDATE_TOAST",
+      toast: { ...props, id },
+    })
+  const dismiss = () => dispatch({ type: "DISMISS_TOAST", toastId: id })
+
+  dispatch({
+    type: "ADD_TOAST",
+    toast: {
+      ...props,
+      id,
+      open: true,
+      onOpenChange: (open) => {
+        if (!open) dismiss()
+      },
+    },
+  })
+
+  return {
+    id: id,
+    dismiss,
+    update,
+  }
+}
+
+function useToast() {
+  const [state, setState] = React.useState<State>(memoryState)
+
+  React.useEffect(() => {
+    listeners.push(setState)
+    return () => {
+      const index = listeners.indexOf(setState)
+      if (index > -1) {
+        listeners.splice(index, 1)
+      }
+    }
+  }, [state])
+
+  return {
+    ...state,
+    toast,
+    dismiss: (toastId?: string) => dispatch({ type: "DISMISS_TOAST", toastId }),
+  }
+}
+
+export { useToast, toast }
+</file>
+
+<file path="src/lib/canvasheatmap.js">
+/**
+ * Simple Canvas-based attention heatmap generator
+ * No external dependencies required
+ */
+
+/**
+ * Generates an attention heatmap for an image
+ * @param url URL or data URL of the image
+ * @returns Promise resolving to a data URL of the heatmap
+ */
+export function generateAttentionHeatmap(url) {
+    return new Promise((resolve, reject) => {
+      try {
+        // Create image element
+        const img = new Image();
+        img.crossOrigin = "anonymous";
+        
+        img.onload = function() {
+          try {
+            // Create canvas
+            const canvas = document.createElement("canvas");
+            canvas.width = img.width;
+            canvas.height = img.height;
+            const ctx = canvas.getContext("2d");
+            
+            if (!ctx) {
+              reject(new Error("Could not get canvas context"));
+              return;
+            }
+            
+            // Draw original image
+            ctx.drawImage(img, 0, 0);
+            
+            // Get image data
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const data = imageData.data;
+            
+            // Create heatmap
+            const heatmapData = new Uint8ClampedArray(data.length);
+            
+            // Calculate center for center bias
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            const maxDist = Math.sqrt(centerX * centerX + centerY * centerY);
+            
+            // Generate heatmap
+            for (let y = 0; y < canvas.height; y++) {
+              for (let x = 0; x < canvas.width; x++) {
+                const i = (y * canvas.width + x) * 4;
+                
+                // Basic center bias
+                const dx = x - centerX;
+                const dy = y - centerY;
+                const distance = Math.sqrt(dx * dx + dy * dy) / maxDist;
+                let heat = 1 - distance * 0.6;
+                
+                // Add top bias
+                if (y < canvas.height / 3) {
+                  heat += 0.2;
+                }
+                
+                // Add small random variation
+                heat += Math.random() * 0.2;
+                
+                // Clamp to [0, 1]
+                heat = Math.max(0, Math.min(1, heat));
+                
+                // Apply color map (blue -> cyan -> green -> yellow -> red)
+                if (heat > 0.6) {
+                  // Red to yellow
+                  heatmapData[i] = 255;
+                  heatmapData[i + 1] = Math.floor(((heat - 0.6) * 255) / 0.4);
+                  heatmapData[i + 2] = 0;
+                } else {
+                  // Blue to cyan to green
+                  heatmapData[i] = 0;
+                  heatmapData[i + 1] = Math.floor((heat * 255) / 0.6);
+                  heatmapData[i + 2] = Math.floor(((0.6 - heat) * 255) / 0.6);
+                }
+                
+                // Set alpha (transparency)
+                heatmapData[i + 3] = Math.floor(128 * heat);
+              }
+            }
+            
+            // Put heatmap on canvas
+            ctx.putImageData(new ImageData(heatmapData, canvas.width, canvas.height), 0, 0);
+            
+            // Overlay original image
+            ctx.globalAlpha = 0.7;
+            ctx.drawImage(img, 0, 0);
+            
+            // Return as data URL
+            resolve(canvas.toDataURL("image/jpeg"));
+          } catch (err) {
+            console.error("Error generating heatmap:", err);
+            reject(err);
+          }
+        };
+        
+        img.onerror = function(err) {
+          console.error("Failed to load image:", err);
+          reject(new Error("Failed to load image"));
+        };
+        
+        img.src = url;
+      } catch (err) {
+        console.error("Error in heatmap generation:", err);
+        reject(err);
+      }
+    });
+  }
 </file>
 
 <file path="src/lib/locations.ts">
@@ -288,8 +458,8 @@ export const locationTypes: LocationType[] = [
     icon: Building,
     description: "Corporate and business offices",
     available: {
-      refrigerated: 120,
-      nonRefrigerated: 200
+      refrigerated: 22,
+      nonRefrigerated: 29
     }
   },
   {
@@ -298,8 +468,8 @@ export const locationTypes: LocationType[] = [
     icon: GraduationCap,
     description: "K-12 and higher education facilities",
     available: {
-      refrigerated: 80,
-      nonRefrigerated: 150
+      refrigerated: 3,
+      nonRefrigerated: 1
     }
   },
   {
@@ -308,8 +478,8 @@ export const locationTypes: LocationType[] = [
     icon: Dumbbell,
     description: "Fitness centers and sports facilities",
     available: {
-      refrigerated: 60,
-      nonRefrigerated: 100
+      refrigerated: 4,
+      nonRefrigerated: 4
     }
   },
   {
@@ -318,8 +488,8 @@ export const locationTypes: LocationType[] = [
     icon: Hotel,
     description: "Hotels and accommodations",
     available: {
-      refrigerated: 90,
-      nonRefrigerated: 130
+      refrigerated: 2,
+      nonRefrigerated: 2
     }
   },
   {
@@ -328,8 +498,8 @@ export const locationTypes: LocationType[] = [
     icon: Film,
     description: "Cinemas and entertainment venues",
     available: {
-      refrigerated: 40,
-      nonRefrigerated: 70
+      refrigerated: 4,
+      nonRefrigerated: 7
     }
   },
   {
@@ -338,8 +508,8 @@ export const locationTypes: LocationType[] = [
     icon: Hospital,
     description: "Healthcare facilities and medical centers",
     available: {
-      refrigerated: 50,
-      nonRefrigerated: 85
+      refrigerated: 3,
+      nonRefrigerated: 2
     }
   }
 ];
@@ -496,6 +666,236 @@ function calculateOverallScore(analysis: z.infer<typeof PackagingAnalysisSchema>
 }
 </file>
 
+<file path="src/lib/saliency.ts">
+import * as tf from '@tensorflow/tfjs';
+
+/**
+ * Loads an image from a URL and converts it to a tensor.
+ * @param url URL or data URL of the image
+ * @returns Promise resolving to an RGB tensor with shape [height, width, 3]
+ */
+export async function loadImageAsTensor(url: string): Promise<tf.Tensor3D> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    
+    img.onload = () => {
+      try {
+        // Create a canvas to draw the image
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext('2d');
+        
+        if (!ctx) {
+          reject(new Error('Failed to get canvas context'));
+          return;
+        }
+        
+        // Draw image to canvas
+        ctx.drawImage(img, 0, 0);
+        
+        // Get image data
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        
+        // Convert to tensor: [height, width, RGBA]
+        const data = Float32Array.from(imageData.data).map(v => v / 255);
+        const rgba = tf.tensor(data, [img.height, img.width, 4]);
+        
+        // Remove alpha channel
+        const rgb = rgba.slice([0, 0, 0], [-1, -1, 3]);
+        
+        resolve(rgb);
+      } catch (err) {
+        reject(err);
+      }
+    };
+    
+    img.onerror = (err) => reject(err);
+    img.src = url;
+  });
+}
+
+/**
+ * Computes a simplified saliency map based on local contrast and color distinctiveness.
+ * This is an alternative to spectral residual that doesn't require FFT.
+ * @param imageUrl URL or data URL of the image
+ * @returns Promise resolving to a data URL of the saliency heatmap
+ */
+export async function computeSaliencyMap(imageUrl: string): Promise<string> {
+  try {
+    // Load image as tensor
+    const imgRGB = await loadImageAsTensor(imageUrl);
+    
+    // Reference image dimensions for output
+    const height = imgRGB.shape[0];
+    const width = imgRGB.shape[1];
+    
+    // Wrap calculation in tidy to manage memory
+    const saliencyMap = tf.tidy(() => {
+      // 1. Convert to grayscale
+      const [r, g, b] = tf.split(imgRGB, 3, 2);
+      const gray = r.mul(0.299).add(g.mul(0.587)).add(b.mul(0.114)).squeeze();
+      
+      // 2. Calculate local contrast using a difference of Gaussians approach
+      // First, create a blurred version - approximating a Gaussian blur
+      const blurred1 = tf.avgPool(
+        gray.expandDims(2).expandDims(0),
+        [3, 3],
+        [1, 1],
+        'same'
+      ).squeeze([0, 2]);
+      
+      // Create a more blurred version
+      const blurred2 = tf.avgPool(
+        blurred1.expandDims(2).expandDims(0), 
+        [5, 5], 
+        [1, 1], 
+        'same'
+      ).squeeze([0, 2]);
+      
+      // Difference of Gaussians to highlight edges and salient regions
+      const dog = tf.abs(blurred1.sub(blurred2));
+      
+      // 3. Color uniqueness component
+      // Calculate color distance from mean color
+      const meanR = r.mean();
+      const meanG = g.mean();
+      const meanB = b.mean();
+      
+      // Distance of each pixel color from the mean
+      const colorDistance = tf.sqrt(
+        r.sub(meanR).square()
+          .add(g.sub(meanG).square())
+          .add(b.sub(meanB).square())
+      ).squeeze();
+      
+      // 4. Combine contrast and color components
+      const saliency = dog.mul(0.5).add(colorDistance.mul(0.5));
+      
+      // 5. Normalize to [0, 1]
+      const normMin = saliency.min();
+      const normMax = saliency.max();
+      return saliency.sub(normMin).div(normMax.sub(normMin).add(1e-5));
+    });
+    
+    // Convert the saliency map to a heatmap overlay
+    const result = await saliencyMapToHeatmap(saliencyMap, imageUrl, height, width);
+    
+    // Clean up
+    tf.dispose(imgRGB);
+    tf.dispose(saliencyMap);
+    
+    return result;
+  } catch (err) {
+    console.error('Error computing saliency map:', err);
+    throw err;
+  }
+}
+
+/**
+ * Converts a saliency map tensor to a colorful heatmap and overlays it on the original image.
+ * @param saliencyMap The [height, width] tensor with values in [0,1]
+ * @param originalUrl The original image URL for overlay
+ * @param height Image height
+ * @param width Image width
+ * @returns Data URL of the heatmap
+ */
+async function saliencyMapToHeatmap(
+  saliencyMap: tf.Tensor2D, 
+  originalUrl: string,
+  height: number,
+  width: number
+): Promise<string> {
+  // Create canvas for the heatmap
+  const canvas = document.createElement('canvas');
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext('2d');
+  
+  if (!ctx) {
+    throw new Error('Failed to get canvas context');
+  }
+  
+  // Get the raw data from tensor
+  const saliencyData = await saliencyMap.data();
+  
+  // Create image data for the heatmap
+  const imageData = ctx.createImageData(width, height);
+  const data = imageData.data;
+  
+  // Apply colormap (similar to jet/rainbow)
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      const i = y * width + x;
+      const pixelIndex = i * 4;
+      
+      // Get saliency value [0,1]
+      const value = saliencyData[i];
+      
+      // Apply heatmap coloring
+      if (value > 0.6) {
+        // red-yellow for high saliency
+        data[pixelIndex] = 255;
+        data[pixelIndex + 1] = Math.floor(((value - 0.6) * 255) / 0.4);
+        data[pixelIndex + 2] = 0;
+      } else {
+        // blue-cyan-green for lower saliency
+        data[pixelIndex] = 0;
+        data[pixelIndex + 1] = Math.floor((value * 255) / 0.6);
+        data[pixelIndex + 2] = Math.floor(((0.6 - value) * 255) / 0.6);
+      }
+      
+      // Set alpha proportional to saliency
+      data[pixelIndex + 3] = Math.floor(180 * value);
+    }
+  }
+  
+  // Put the heatmap on the canvas
+  ctx.putImageData(imageData, 0, 0);
+  
+  // Overlay original image with reduced opacity
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    
+    img.onload = () => {
+      ctx.globalAlpha = 0.7;
+      ctx.drawImage(img, 0, 0);
+      resolve(canvas.toDataURL('image/jpeg'));
+    };
+    
+    img.onerror = () => {
+      // If overlay fails, just return the heatmap
+      console.warn('Failed to overlay original image, returning heatmap only');
+      resolve(canvas.toDataURL('image/jpeg'));
+    };
+    
+    img.src = originalUrl;
+  });
+}
+
+/**
+ * Test function to verify TensorFlow.js is working correctly
+ */
+export async function testTensorflowIntegration() {
+  console.log("TensorFlow.js version:", tf.version.tfjs);
+  console.log("Backend:", tf.getBackend());
+  
+  // Simple operation test
+  const a = tf.tensor1d([1, 2, 3]);
+  const b = tf.tensor1d([4, 5, 6]);
+  const result = a.add(b);
+  
+  console.log("Simple operation result:", await result.array());
+  
+  // Clean up tensors
+  tf.dispose([a, b, result]);
+  
+  return "TensorFlow.js test completed successfully!";
+}
+</file>
+
 <file path="src/lib/utils.ts">
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
@@ -540,8 +940,8 @@ const locationTypes: LocationType[] = [
     icon: Building,
     description: "Corporate and business offices",
     available: {
-      refrigerated: 120,
-      nonRefrigerated: 200
+      refrigerated: 25,
+      nonRefrigerated: 29
     }
   },
   {
@@ -550,8 +950,8 @@ const locationTypes: LocationType[] = [
     icon: GraduationCap,
     description: "K-12 and higher education facilities",
     available: {
-      refrigerated: 80,
-      nonRefrigerated: 150
+      refrigerated: 2,
+      nonRefrigerated: 2
     }
   },
   {
@@ -560,8 +960,8 @@ const locationTypes: LocationType[] = [
     icon: Dumbbell,
     description: "Fitness centers and sports facilities",
     available: {
-      refrigerated: 60,
-      nonRefrigerated: 100
+      refrigerated: 4,
+      nonRefrigerated: 4
     }
   },
   {
@@ -570,8 +970,8 @@ const locationTypes: LocationType[] = [
     icon: Hotel,
     description: "Hotels and accommodations",
     available: {
-      refrigerated: 90,
-      nonRefrigerated: 130
+      refrigerated: 3,
+      nonRefrigerated: 3
     }
   },
   {
@@ -580,8 +980,8 @@ const locationTypes: LocationType[] = [
     icon: Film,
     description: "Cinemas and entertainment venues",
     available: {
-      refrigerated: 40,
-      nonRefrigerated: 70
+      refrigerated: 5,
+      nonRefrigerated: 5
     }
   },
   {
@@ -590,8 +990,8 @@ const locationTypes: LocationType[] = [
     icon: Hospital,
     description: "Healthcare facilities and medical centers",
     available: {
-      refrigerated: 50,
-      nonRefrigerated: 85
+      refrigerated: 2,
+      nonRefrigerated: 2
     }
   }
 ];
@@ -675,7 +1075,7 @@ const DeployTest = () => {
     <div className="min-h-screen bg-gray-50">
       <header className="bg-white shadow-sm">
         <div className="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8 flex justify-between items-center">
-          <h1 className="text-2xl font-bold text-gray-900">Stash Packaging-Attention MVP</h1>
+          <h1 className="text-2xl font-bold text-gray-900">Stash Packaging Test</h1>
           
           {/* Back to Results button in header */}
           <Button 
@@ -973,7 +1373,7 @@ const Index = () => {
     <div className="min-h-screen bg-gray-50">
       <header className="bg-white shadow-sm">
         <div className="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8">
-          <h1 className="text-2xl font-bold text-gray-900">Stash Packaging-Attention MVP</h1>
+          <h1 className="text-2xl font-bold text-gray-900">Stash Packaging Test</h1>
         </div>
       </header>
       
@@ -1126,7 +1526,6 @@ interface AnalysisResult {
   aiAnalysis?: string;
 }
 
-
 // Score card component for displaying individual scores
 const ScoreCard = ({ label, score }: { label: string; score: number }) => (
   <div className="flex flex-col items-center bg-gray-50 rounded-lg p-3 text-center">
@@ -1147,62 +1546,47 @@ const Results = () => {
   // Get the uploaded images from the location state
   const uploadedImages = location.state?.uploadedImages || [];
   
-  // In Results.tsx - add this near the beginning of the component
-useEffect(() => {
-  if (!uploadedImages.length) {
-    // If we're coming back from deploy page, check localStorage for saved results
-    const savedResults = localStorage.getItem('analysisResults');
-    
-    if (savedResults) {
-      setResults(JSON.parse(savedResults));
-      setLoading(false);
-    } else {
-      // No saved results and no uploaded images, navigate to home
+  useEffect(() => {
+    if (!uploadedImages.length) {
       navigate('/');
       toast({
         title: "No images to analyze",
         description: "Please upload images first",
         variant: "destructive"
       });
+      return;
     }
-    return;
-  }
-  
-  const performAnalysis = async () => {
-    try {
-      setLoading(true);
-      const analysisResults = await analyzeImages(uploadedImages);
-      setResults(analysisResults);
-      
-      // Save results to localStorage
-      localStorage.setItem('analysisResults', JSON.stringify(analysisResults));
-      
-      setLoading(false);
-    } catch (error) {
-      console.error("Error during analysis:", error);
-      toast({
-        title: "Analysis failed",
-        description: "There was an error processing your images. Please try again.",
-        variant: "destructive"
-      });
-      setLoading(false);
-    }
-  };
-  
-  performAnalysis();
-}, [uploadedImages, navigate]);
+    
+    const performAnalysis = async () => {
+      try {
+        setLoading(true);
+        const analysisResults = await analyzeImages(uploadedImages);
+        setResults(analysisResults);
+        setLoading(false);
+      } catch (error) {
+        console.error("Error during analysis:", error);
+        toast({
+          title: "Analysis failed",
+          description: "There was an error processing your images. Please try again.",
+          variant: "destructive"
+        });
+        setLoading(false);
+      }
+    };
+    
+    performAnalysis();
+  }, [uploadedImages, navigate]);
   
   const handleNewAnalysis = () => {
     navigate('/');
   };
   
-    // Update the handleDeployTest function
   const handleDeployTest = () => {
-    // Make sure results are saved before navigating
-    if (results.length > 0) {
-      localStorage.setItem('analysisResults', JSON.stringify(results));
-    }
-    navigate('/deploy');
+    // Add your deploy test functionality here
+    toast({
+      title: "Test Deployed",
+      description: "Your packaging test has been deployed successfully"
+    });
   };
   
   const renderLoadingState = () => (
@@ -1355,7 +1739,10 @@ useEffect(() => {
             <ArrowUp className="mr-2 h-4 w-4" />
             Analyze New Images
           </Button>
-
+          
+          <Button variant="outline" onClick={handleNewAnalysis}>
+            Analyze Different Images
+          </Button>
         </div>
         
         <Button onClick={handleDeployTest} variant="default">
@@ -1461,14 +1848,33 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
-
+.env
 
 *.css
-src/components/ui
-src/hooks
-*.json
-*.svg
-*.mjs
+src/components
+</file>
+
+<file path="components.json">
+{
+  "$schema": "https://ui.shadcn.com/schema.json",
+  "style": "default",
+  "rsc": false,
+  "tsx": true,
+  "tailwind": {
+    "config": "tailwind.config.ts",
+    "css": "src/index.css",
+    "baseColor": "slate",
+    "cssVariables": true,
+    "prefix": ""
+  },
+  "aliases": {
+    "components": "@/components",
+    "utils": "@/lib/utils",
+    "ui": "@/components/ui",
+    "lib": "@/lib",
+    "hooks": "@/hooks"
+  }
+}
 </file>
 
 <file path="eslint.config.js">
@@ -1509,11 +1915,11 @@ export default tseslint.config(
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Stash Packaging-Attention MVP</title>
+    <title>Stash Packaging Test</title>
     <meta name="description" content="Analyze CPG packaging images for attention optimization" />
     <meta name="author" content="Lovable" />
 
-    <meta property="og:title" content="Stash Packaging-Attention MVP" />
+    <meta property="og:title" content="Stash Packaging Test" />
     <meta property="og:description" content="Analyze CPG packaging images for attention optimization" />
     <meta property="og:type" content="website" />
     <meta property="og:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
@@ -1530,6 +1936,94 @@ export default tseslint.config(
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
+</file>
+
+<file path="package.json">
+{
+  "name": "vite_react_shadcn_ts",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "build:dev": "vite build --mode development",
+    "lint": "eslint .",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@hookform/resolvers": "^3.9.0",
+    "@radix-ui/react-accordion": "^1.2.0",
+    "@radix-ui/react-alert-dialog": "^1.1.1",
+    "@radix-ui/react-aspect-ratio": "^1.1.0",
+    "@radix-ui/react-avatar": "^1.1.0",
+    "@radix-ui/react-checkbox": "^1.1.1",
+    "@radix-ui/react-collapsible": "^1.1.0",
+    "@radix-ui/react-context-menu": "^2.2.1",
+    "@radix-ui/react-dialog": "^1.1.2",
+    "@radix-ui/react-dropdown-menu": "^2.1.1",
+    "@radix-ui/react-hover-card": "^1.1.1",
+    "@radix-ui/react-label": "^2.1.0",
+    "@radix-ui/react-menubar": "^1.1.1",
+    "@radix-ui/react-navigation-menu": "^1.2.0",
+    "@radix-ui/react-popover": "^1.1.1",
+    "@radix-ui/react-progress": "^1.1.0",
+    "@radix-ui/react-radio-group": "^1.2.0",
+    "@radix-ui/react-scroll-area": "^1.1.0",
+    "@radix-ui/react-select": "^2.1.1",
+    "@radix-ui/react-separator": "^1.1.0",
+    "@radix-ui/react-slider": "^1.2.0",
+    "@radix-ui/react-slot": "^1.1.0",
+    "@radix-ui/react-switch": "^1.1.0",
+    "@radix-ui/react-tabs": "^1.1.0",
+    "@radix-ui/react-toast": "^1.2.1",
+    "@radix-ui/react-toggle": "^1.1.0",
+    "@radix-ui/react-toggle-group": "^1.1.0",
+    "@radix-ui/react-tooltip": "^1.1.4",
+    "@tanstack/react-query": "^5.56.2",
+    "@tensorflow/tfjs-vis": "^1.1.0",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "cmdk": "^1.0.0",
+    "date-fns": "^3.6.0",
+    "embla-carousel-react": "^8.3.0",
+    "input-otp": "^1.2.4",
+    "lucide-react": "^0.462.0",
+    "next-themes": "^0.3.0",
+    "openai": "^4.98.0",
+    "react": "^18.3.1",
+    "react-day-picker": "^8.10.1",
+    "react-dom": "^18.3.1",
+    "react-hook-form": "^7.53.0",
+    "react-resizable-panels": "^2.1.3",
+    "react-router-dom": "^6.26.2",
+    "recharts": "^2.12.7",
+    "sonner": "^1.5.0",
+    "tailwind-merge": "^2.5.2",
+    "tailwindcss-animate": "^1.0.7",
+    "vaul": "^0.9.3",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.9.0",
+    "@tailwindcss/typography": "^0.5.15",
+    "@types/node": "^22.5.5",
+    "@types/react": "^18.3.3",
+    "@types/react-dom": "^18.3.0",
+    "@vitejs/plugin-react-swc": "^3.5.0",
+    "autoprefixer": "^10.4.20",
+    "eslint": "^9.9.0",
+    "eslint-plugin-react-hooks": "^5.1.0-rc.0",
+    "eslint-plugin-react-refresh": "^0.4.9",
+    "globals": "^15.9.0",
+    "lovable-tagger": "^1.1.7",
+    "postcss": "^8.4.47",
+    "tailwindcss": "^3.4.11",
+    "typescript": "^5.5.3",
+    "typescript-eslint": "^8.0.1",
+    "vite": "^5.4.1"
+  }
+}
 </file>
 
 <file path="postcss.config.js">
@@ -1716,6 +2210,103 @@ export default {
 } satisfies Config;
 </file>
 
+<file path="tsconfig.app.json">
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "useDefineForClassFields": true,
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "skipLibCheck": true,
+
+    /* Bundler mode */
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "isolatedModules": true,
+    "moduleDetection": "force",
+    "noEmit": true,
+    "jsx": "react-jsx",
+
+    /* Linting */
+    "strict": false,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "noImplicitAny": false,
+    "noFallthroughCasesInSwitch": false,
+
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"]
+    }
+  },
+  "include": ["src"]
+}
+</file>
+
+<file path="tsconfig.json">
+{
+  "files": [],
+
+  "references": [
+    { "path": "./tsconfig.app.json" },
+    { "path": "./tsconfig.node.json" }
+  ],
+
+  "compilerOptions": {
+    /* ------------------------------------------------------------------ */
+    /* Alias keeps TypeScript in sync with Vite’s `@`                     */
+    /* ------------------------------------------------------------------ */
+    "baseUrl": ".",                       // project root
+    "paths": {
+      "@/*": ["src/*"]
+    },
+
+    /* ------------------------------------------------------------------ */
+    /* Typical React-Vite settings                                        */
+    /* ------------------------------------------------------------------ */
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "lib": ["DOM", "ESNext"],
+
+    /* ------------------------------------------------------------------ */
+    /* Relaxed flags (you can tighten later)                              */
+    /* ------------------------------------------------------------------ */
+    "skipLibCheck": true,
+    "allowJs": true,
+    "noImplicitAny": false,
+    "noUnusedParameters": false,
+    "noUnusedLocals": false,
+    "strictNullChecks": false
+  }
+}
+</file>
+
+<file path="tsconfig.node.json">
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2023"],
+    "module": "ESNext",
+    "skipLibCheck": true,
+
+    /* Bundler mode */
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "isolatedModules": true,
+    "moduleDetection": "force",
+    "noEmit": true,
+
+    /* Linting */
+    "strict": true,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "noFallthroughCasesInSwitch": true
+  },
+  "include": ["vite.config.ts"]
+}
+</file>
+
 <file path="vite.config.ts">
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
@@ -1743,6 +2334,242 @@ export default defineConfig(({ mode }) => ({
   // Small shim so the OpenAI SDK’s `crypto` fallback works in the browser.
   define: { global: "globalThis" },
 }));
+</file>
+
+<file path="vite.config.ts.timestamp-1747032750866-d6e78ccb03e03.mjs">
+// vite.config.ts
+import { defineConfig } from "file:///Users/Vee/Documents/package-peek-attention-boost-main/node_modules/vite/dist/node/index.js";
+import react from "file:///Users/Vee/Documents/package-peek-attention-boost-main/node_modules/@vitejs/plugin-react-swc/index.mjs";
+import path from "path";
+import { componentTagger } from "file:///Users/Vee/Documents/package-peek-attention-boost-main/node_modules/lovable-tagger/dist/index.js";
+var __vite_injected_original_dirname = "/Users/Vee/Documents/package-peek-attention-boost-main";
+var vite_config_default = defineConfig(({ mode }) => ({
+  server: {
+    host: "::",
+    port: 8080
+  },
+  plugins: [
+    react(),
+    mode === "development" && componentTagger()
+  ].filter(Boolean),
+  resolve: {
+    alias: {
+      "@": path.resolve(__vite_injected_original_dirname, "src")
+      //  ➜  import "@/foo"
+    }
+  },
+  // Small shim so the OpenAI SDK’s `crypto` fallback works in the browser.
+  define: { global: "globalThis" }
+}));
+export {
+  vite_config_default as default
+};
+//# sourceMappingURL=data:application/json;base64,ewogICJ2ZXJzaW9uIjogMywKICAic291cmNlcyI6IFsidml0ZS5jb25maWcudHMiXSwKICAic291cmNlc0NvbnRlbnQiOiBbImNvbnN0IF9fdml0ZV9pbmplY3RlZF9vcmlnaW5hbF9kaXJuYW1lID0gXCIvVXNlcnMvVmVlL0RvY3VtZW50cy9wYWNrYWdlLXBlZWstYXR0ZW50aW9uLWJvb3N0LW1haW5cIjtjb25zdCBfX3ZpdGVfaW5qZWN0ZWRfb3JpZ2luYWxfZmlsZW5hbWUgPSBcIi9Vc2Vycy9WZWUvRG9jdW1lbnRzL3BhY2thZ2UtcGVlay1hdHRlbnRpb24tYm9vc3QtbWFpbi92aXRlLmNvbmZpZy50c1wiO2NvbnN0IF9fdml0ZV9pbmplY3RlZF9vcmlnaW5hbF9pbXBvcnRfbWV0YV91cmwgPSBcImZpbGU6Ly8vVXNlcnMvVmVlL0RvY3VtZW50cy9wYWNrYWdlLXBlZWstYXR0ZW50aW9uLWJvb3N0LW1haW4vdml0ZS5jb25maWcudHNcIjtpbXBvcnQgeyBkZWZpbmVDb25maWcgfSBmcm9tIFwidml0ZVwiO1xuaW1wb3J0IHJlYWN0IGZyb20gXCJAdml0ZWpzL3BsdWdpbi1yZWFjdC1zd2NcIjtcbmltcG9ydCBwYXRoIGZyb20gXCJwYXRoXCI7XG5pbXBvcnQgeyBjb21wb25lbnRUYWdnZXIgfSBmcm9tIFwibG92YWJsZS10YWdnZXJcIjtcblxuLy8gaHR0cHM6Ly92aXRlanMuZGV2L2NvbmZpZy9cbmV4cG9ydCBkZWZhdWx0IGRlZmluZUNvbmZpZygoeyBtb2RlIH0pID0+ICh7XG4gIHNlcnZlcjoge1xuICAgIGhvc3Q6IFwiOjpcIixcbiAgICBwb3J0OiA4MDgwLFxuICB9LFxuXG4gIHBsdWdpbnM6IFtcbiAgICByZWFjdCgpLFxuICAgIG1vZGUgPT09IFwiZGV2ZWxvcG1lbnRcIiAmJiBjb21wb25lbnRUYWdnZXIoKSxcbiAgXS5maWx0ZXIoQm9vbGVhbiksXG5cbiAgcmVzb2x2ZToge1xuICAgIGFsaWFzOiB7XG4gICAgICBcIkBcIjogcGF0aC5yZXNvbHZlKF9fZGlybmFtZSwgXCJzcmNcIiksICAgICAgIC8vICBcdTI3OUMgIGltcG9ydCBcIkAvZm9vXCJcbiAgICB9LFxuICB9LFxuXG4gIC8vIFNtYWxsIHNoaW0gc28gdGhlIE9wZW5BSSBTREtcdTIwMTlzIGBjcnlwdG9gIGZhbGxiYWNrIHdvcmtzIGluIHRoZSBicm93c2VyLlxuICBkZWZpbmU6IHsgZ2xvYmFsOiBcImdsb2JhbFRoaXNcIiB9LFxufSkpO1xuIl0sCiAgIm1hcHBpbmdzIjogIjtBQUFvVixTQUFTLG9CQUFvQjtBQUNqWCxPQUFPLFdBQVc7QUFDbEIsT0FBTyxVQUFVO0FBQ2pCLFNBQVMsdUJBQXVCO0FBSGhDLElBQU0sbUNBQW1DO0FBTXpDLElBQU8sc0JBQVEsYUFBYSxDQUFDLEVBQUUsS0FBSyxPQUFPO0FBQUEsRUFDekMsUUFBUTtBQUFBLElBQ04sTUFBTTtBQUFBLElBQ04sTUFBTTtBQUFBLEVBQ1I7QUFBQSxFQUVBLFNBQVM7QUFBQSxJQUNQLE1BQU07QUFBQSxJQUNOLFNBQVMsaUJBQWlCLGdCQUFnQjtBQUFBLEVBQzVDLEVBQUUsT0FBTyxPQUFPO0FBQUEsRUFFaEIsU0FBUztBQUFBLElBQ1AsT0FBTztBQUFBLE1BQ0wsS0FBSyxLQUFLLFFBQVEsa0NBQVcsS0FBSztBQUFBO0FBQUEsSUFDcEM7QUFBQSxFQUNGO0FBQUE7QUFBQSxFQUdBLFFBQVEsRUFBRSxRQUFRLGFBQWE7QUFDakMsRUFBRTsiLAogICJuYW1lcyI6IFtdCn0K
+</file>
+
+<file path="src/lib/api.js">
+import { toast } from "@/hooks/use-toast";
+import {
+  analyzePackageDesign,
+  fileToBase64
+} from "./openai";
+import { generateAttentionHeatmap } from "./canvasheatmap.js";
+
+/* ---------- Public function -------------------------------------- */
+
+export const analyzeImages = async (images) => {
+  toast({
+    title: "Analyzing images",
+    description: "Running AI vision model…"
+  });
+
+  return Promise.all(
+    images.map(async (image) => {
+      try {
+        /* 1️⃣  Generate attention heatmap */
+        let heatmapSrc;
+        try {
+          // Try main heatmap generator
+          heatmapSrc = await generateAttentionHeatmap(image.preview);
+        } catch (err) {
+          console.error("Heatmap generation failed:", err);
+          
+          toast({
+            title: "Heatmap processing issue",
+            description: "Using fallback visualization method.",
+            variant: "destructive"
+          });
+          
+          // Use fallback
+          heatmapSrc = await generateSimulatedHeatmap(image.preview);
+        }
+
+        /* 2️⃣  OpenAI analysis */
+        const base64 = await fileToBase64(image.file);
+        let analysis;
+
+        try {
+          analysis = await analyzePackageDesign(base64);
+        } catch (err) {
+          console.error("OpenAI analysis failed:", err);
+          toast({
+            title: "AI analysis failed",
+            description: "Showing simulated scores instead.",
+            variant: "destructive"
+          });
+          
+          // Generate fallback scores
+          const fallbackScore = Math.round((4 + Math.random() * 5.5) * 10) / 10;
+          analysis = {
+            attentionScore: fallbackScore,
+            colorImpact: fallbackScore,
+            readability: fallbackScore,
+            brandVisibility: fallbackScore,
+            overallScore: fallbackScore,
+            suggestions: generateSuggestions(fallbackScore),
+            analysis: "Simulated analysis due to API error."
+          };
+        }
+
+        /* 3️⃣  return combined result for UI */
+        return {
+          imageId: image.id,
+          originalSrc: image.preview,
+          heatmapSrc,
+          attentionScore: analysis.attentionScore,
+          colorImpact: analysis.colorImpact,
+          readability: analysis.readability,
+          brandVisibility: analysis.brandVisibility,
+          overallScore: analysis.overallScore,
+          suggestions: analysis.suggestions,
+          aiAnalysis: analysis.analysis
+        };
+      } catch (err) {
+        console.error("Unexpected analysis error:", err);
+        
+        // Final fallback with minimal result
+        const fallbackScore = 5.0;
+        
+        toast({
+          title: "Analysis partially failed",
+          description: "Some features may be limited. Please try again.",
+          variant: "destructive"
+        });
+        
+        return {
+          imageId: image.id,
+          originalSrc: image.preview,
+          heatmapSrc: image.preview, // Just use original image if all else fails
+          attentionScore: fallbackScore,
+          colorImpact: fallbackScore,
+          readability: fallbackScore,
+          brandVisibility: fallbackScore,
+          overallScore: fallbackScore,
+          suggestions: ["Unable to generate analysis. Please try again."],
+          aiAnalysis: "Analysis failed. Please try uploading a different image."
+        };
+      }
+    })
+  );
+};
+
+/* ---------- Helpers ---------------------------------------------- */
+
+/* Simple fallback heatmap */
+const generateSimulatedHeatmap = (url) => {
+  return new Promise((resolve, reject) => {
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+
+    img.onload = function() {
+      try {
+        canvas.width = img.width;
+        canvas.height = img.height;
+        
+        if (!ctx) {
+          reject(new Error("No 2D context"));
+          return;
+        }
+
+        // Draw original
+        ctx.drawImage(img, 0, 0);
+        
+        // Create a simple center-weighted heatmap
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const data = imageData.data;
+        
+        const cx = canvas.width / 2;
+        const cy = canvas.height / 2;
+        
+        for (let y = 0; y < canvas.height; y++) {
+          for (let x = 0; x < canvas.width; x++) {
+            const i = (y * canvas.width + x) * 4;
+            
+            // Simple center + top weighting
+            const dx = x - cx;
+            const dy = y - cy;
+            const distance = Math.sqrt(dx * dx + dy * dy) / (canvas.width / 2);
+            const topBoost = y < (canvas.height / 3) ? 0.3 : 0;
+            
+            let heat = (1 - distance) * 0.7 + topBoost + Math.random() * 0.1;
+            heat = Math.max(0, Math.min(1, heat));
+            
+            // Apply color map
+            if (heat > 0.6) {
+              data[i] = 255;  // red
+              data[i + 1] = Math.floor(((heat - 0.6) * 255) / 0.4);  // green
+              data[i + 2] = 0;  // blue
+            } else {
+              data[i] = 0;  // red
+              data[i + 1] = Math.floor((heat * 255) / 0.6);  // green
+              data[i + 2] = Math.floor(((0.6 - heat) * 255) / 0.6);  // blue
+            }
+            
+            data[i + 3] = Math.floor(128 * heat);  // alpha
+          }
+        }
+        
+        ctx.putImageData(imageData, 0, 0);
+        
+        // Overlay original with transparency
+        ctx.globalAlpha = 0.7;
+        ctx.drawImage(img, 0, 0);
+        
+        resolve(canvas.toDataURL("image/jpeg"));
+      } catch (err) {
+        console.error("Error in fallback heatmap:", err);
+        reject(err);
+      }
+    };
+
+    img.onerror = function() {
+      reject(new Error("Failed to load image"));
+    };
+
+    img.src = url;
+  });
+};
+
+/* Suggestion generator */
+const generateSuggestions = (score) => {
+  const ideas = [
+    "Increase contrast between product name and background.",
+    "Use a larger font for key claims.",
+    "Position the logo in the top third for maximum noticeability.",
+    "Reduce visual clutter to focus attention on core message.",
+    "Consider higher-saturation colors for stronger shelf pop.",
+    "Add negative space around hero elements.",
+    "Try a distinctive die-cut or silhouette.",
+    "Apply the rule of thirds to layout.",
+    "Add texture contrast to make elements pop.",
+    "Re-evaluate hierarchy based on consumer priorities."
+  ];
+  const shuffled = ideas.sort(() => 0.5 - Math.random());
+  const n = Math.max(2, Math.min(5, Math.round(10 - score)));
+  return shuffled.slice(0, n);
+};
 </file>
 
 </files>

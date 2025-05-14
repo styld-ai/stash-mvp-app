@@ -148,7 +148,7 @@ const DeployTest = () => {
   };
 
   const viewResults = () => {
-    // The Results page will now check localStorage for saved results
+    // Navigate back to results - it will load the saved results from localStorage
     navigate('/results', { replace: true });
   };
   
@@ -197,27 +197,26 @@ const DeployTest = () => {
           
           {/* Flexible layout that changes with map visibility */}
           <div className={`grid grid-cols-1 ${showMap ? 'md:grid-cols-5 gap-6' : ''}`}>
-            {/* Map area - only visible when toggled */}
-            {showMap && (
-              <div className="md:col-span-2 transition-all duration-300 ease-in-out">
-                <div className="bg-white rounded-lg shadow h-full overflow-hidden">
-                  <div className="bg-gray-100 p-4 border-b">
-                    <h2 className="font-medium">Available Locations</h2>
-                    <p className="text-sm text-gray-500">Interactive map of our test locations</p>
-                  </div>
-                  <div className="p-4 flex items-center justify-center bg-gray-50 h-[calc(100%-4rem)]">
-                    {/* Placeholder for the map image */}
-                    <div className="w-full h-full min-h-[400px] bg-gray-200 rounded flex items-center justify-center">
-                      <p className="text-gray-500 text-center">
-                        <Map className="h-12 w-12 mx-auto mb-2 text-gray-400" />
-                        Location Map<br/>
-                        <span className="text-sm">Coming soon</span>
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
+     {/* Map area - only visible when toggled */}
+{showMap && (
+  <div className="md:col-span-2 transition-all duration-300 ease-in-out">
+    <div className="bg-white rounded-lg shadow h-full overflow-hidden">
+      <div className="bg-gray-100 p-4 border-b">
+        <h2 className="font-medium">Available Locations</h2>
+        <p className="text-sm text-gray-500">Interactive map of our test locations</p>
+      </div>
+      {/* Remove the fixed height and adjust the styling to prevent cropping */}
+      <div className="p-4 bg-gray-50 overflow-auto">
+        {/* Actual map image - changed object-cover to object-contain */}
+        <img 
+          src="/map.png" 
+          alt="Stash Locations Map" 
+          className="w-full object-contain rounded-md"
+        />
+      </div>
+    </div>
+  </div>
+)}
             
             {/* Main form area */}
             <div className={showMap ? 'md:col-span-3' : ''}>

@@ -41,34 +41,53 @@ const Results = () => {
   const uploadedImages = location.state?.uploadedImages || [];
   
   useEffect(() => {
-    if (!uploadedImages.length) {
+    // If we have uploaded images from location state, analyze them
+    if (uploadedImages.length) {
+      const performAnalysis = async () => {
+        try {
+          setLoading(true);
+          const analysisResults = await analyzeImages(uploadedImages);
+          setResults(analysisResults);
+          
+          // Save results to localStorage
+          localStorage.setItem('analysisResults', JSON.stringify(analysisResults));
+          
+          setLoading(false);
+        } catch (error) {
+          console.error("Error during analysis:", error);
+          toast({
+            title: "Analysis failed",
+            description: "There was an error processing your images. Please try again.",
+            variant: "destructive"
+          });
+          setLoading(false);
+        }
+      };
+      
+      performAnalysis();
+      return;
+    }
+    
+    // Otherwise check if we have saved results
+    const savedResults = localStorage.getItem('analysisResults');
+    if (savedResults) {
+      try {
+        const parsedResults = JSON.parse(savedResults);
+        setResults(parsedResults);
+        setLoading(false);
+      } catch (error) {
+        console.error("Error parsing saved results:", error);
+        navigate('/');
+      }
+    } else {
+      // No uploaded images and no saved results, go back to home
       navigate('/');
       toast({
         title: "No images to analyze",
         description: "Please upload images first",
         variant: "destructive"
       });
-      return;
     }
-    
-    const performAnalysis = async () => {
-      try {
-        setLoading(true);
-        const analysisResults = await analyzeImages(uploadedImages);
-        setResults(analysisResults);
-        setLoading(false);
-      } catch (error) {
-        console.error("Error during analysis:", error);
-        toast({
-          title: "Analysis failed",
-          description: "There was an error processing your images. Please try again.",
-          variant: "destructive"
-        });
-        setLoading(false);
-      }
-    };
-    
-    performAnalysis();
   }, [uploadedImages, navigate]);
   
   const handleNewAnalysis = () => {
@@ -76,11 +95,8 @@ const Results = () => {
   };
   
   const handleDeployTest = () => {
-    // Add your deploy test functionality here
-    toast({
-      title: "Test Deployed",
-      description: "Your packaging test has been deployed successfully"
-    });
+    // Navigate to deploy test page
+    navigate('/deploy');
   };
   
   const renderLoadingState = () => (
